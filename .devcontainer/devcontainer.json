@@ -1,0 +1,27 @@
+{
+    "image": "zingdev/devcontainer-node:18-base",
+    "runArgs": ["--name", "uss-midway-ticket-notifications"],
+    "remoteUser": "vscode",
+    "features": {
+      "ghcr.io/eitsupi/devcontainer-features/jq-likes:1": {},
+      "ghcr.io/devcontainers/features/azure-cli:1": {
+        "version": "latest"
+      },
+      "ghcr.io/jlaundry/devcontainer-features/azure-functions-core-tools:1": {}
+    },
+    "customizations": {
+      // Configure properties specific to VS Code.
+      "vscode": {
+        // Add the IDs of extensions you want installed when the container is created.
+        "extensions": [
+          "dbaeumer.vscode-eslint",
+          "esbenp.prettier-vscode",
+          "SonarSource.sonarlint-vscode",
+          "yzhang.markdown-all-in-one",
+          "streetsidesoftware.code-spell-checker",
+          "github.vscode-github-actions",
+          "ms-azuretools.vscode-azurefunctions"
+        ]
+      }
+    }
+  }
