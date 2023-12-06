@@ -1,12 +1,13 @@
 {
   "name": "uss-midway-ticket-notifications",
   "version": "1.0.0",
-  "description": "",
+  "description": "Azure function for USS Midway ticket notifications",
+  "license": "MIT",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "clean": "rimraf dist",
-    "prestart": "npm run clean && npm run build",
+    "prestart": "yarn clean && yarn build",
     "start": "func start",
     "test": "echo \"No tests yet...\""
   },
