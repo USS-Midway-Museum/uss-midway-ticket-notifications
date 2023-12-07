@@ -1,0 +1,1 @@
+To deploy, run in wsl and install zip

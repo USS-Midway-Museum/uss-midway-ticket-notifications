@@ -1,0 +1,136 @@
+name: "[BUILD & DEPLOY] Build and Deploy Azure Functions"
+run-name: "BUILD Azure Functions and DEPLOY to Instance [${{ inputs.STACK_NAME }}]"
+on:
+  workflow_dispatch:
+    inputs:
+      STACK_NAME:
+        description: Azure Stack Name
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Install and Copy Runtime Dependencies
+        run: |
+          mkdir TEMP_FUNCTIONS_OUTPUT
+          if [[ -d node_modules ]]; then
+            cp -r node_modules TEMP_FUNCTIONS_OUTPUT
+          fi
+          cp package.json TEMP_FUNCTIONS_OUTPUT/package.json
+          cp host.json TEMP_FUNCTIONS_OUTPUT/host.json
+          cp yarn.lock TEMP_FUNCTIONS_OUTPUT/yarn.lock
+
+      - name: Install Build Dependencies
+        run: yarn --immutable --immutable-cache --mode=skip-build
+
+      - name: Build Azure Functions
+        run: |
+          yarn build
+          cp -r dist TEMP_FUNCTIONS_OUTPUT
+
+      - name: Get package.json version
+        id: version
+        run: |
+          name=$(cat package.json | jq -r .name)
+          version=$(cat package.json | jq -r .version)
+          echo "NAME=$name" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$version" >> "$GITHUB_OUTPUT"
+          echo "PACKAGE=$name@$version" >> "$GITHUB_OUTPUT"
+
+      - name: Zip Dist files
+        working-directory: TEMP_FUNCTIONS_OUTPUT
+        run: zip -q -D -X -y -r az-function-dist.zip *
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: "${{ steps.version.outputs.PACKAGE }}"
+          path: TEMP_FUNCTIONS_OUTPUT/az-function-dist.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    runs-on: ubuntu-22.04
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get package.json version
+        id: version
+        run: |
+          name=$(cat package.json | jq -r .name)
+          version=$(cat package.json | jq -r .version)
+          echo "NAME=$name" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$version" >> "$GITHUB_OUTPUT"
+          echo "PACKAGE=$name@$version" >> "$GITHUB_OUTPUT"
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: "${{ steps.version.outputs.PACKAGE }}"
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ vars.AZ_CLIENT_ID }}
+          tenant-id: ${{ vars.AZ_TENANT_ID }}
+          subscription-id: ${{ vars.AZ_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Terraform Output
+        id: tfAzure
+        uses: zingdevlimited/actions-helpers/azure/terraform-output@v3
+        with:
+          AZ_CLIENT_ID: ${{ vars.AZ_CLIENT_ID }}
+          AZ_TENANT_ID: ${{ vars.AZ_TENANT_ID }}
+          AZ_SUBSCRIPTION_ID: ${{ vars.AZ_SUBSCRIPTION_ID }}
+          STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars.RESOURCE_GROUP }}
+          STORAGE_ACCOUNT_NAME: ${{ vars.STORAGE_ACCOUNT_NAME }}
+          STORAGE_ACCOUNT_CONTAINER: ${{ vars.STORAGE_ACCOUNT_CONTAINER }}
+          TERRAFORM_DIRECTORY: ./terraform
+
+      - name: Generate AppSettings JSON
+        id: appsettings
+        run: |
+          result=$(cat appsettings-definition.json | envsubst)
+          echo "$result" > appsettings-definition.json
+        env:
+          sbnsproductxdev_SERVICEBUS: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).SERVICE_BUS_CONNECTION_STRING.value }}
+          AZURE_TABLE_NAME: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).CONFIG_TABLE_NAME.value }}
+          AZURE_KEYVAULT_URL: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).KEYVAULT_URL.value }}
+          AZURE_TABLE_STORAGE_ACCOUNT_NAME: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).STORAGE_ACCOUNT_NAME.value }}
+          AZURE_SERVICE_BUS_NAMESPACE: ${{fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).AZURE_SERVICE_BUS_NAMESPACE.value}}
+          SERVICE_BUS_INTERACTION_TOPIC_NAME: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).SERVICE_BUS_INTERACTION_TOPIC_NAME.value }}
+          
+      - name: Deploy To Azure
+        run: |
+          az functionapp stop -g "$RESOURCE_GROUP" -n "$AZURE_FUNC_NAME"
+
+          az functionapp config appsettings set -g "$RESOURCE_GROUP" -n "$AZURE_FUNC_NAME" --settings "@appsettings-definition.json"
+
+          az functionapp deployment source config-zip -g "$RESOURCE_GROUP" -n "$AZURE_FUNC_NAME" --src az-function-dist.zip
+
+          az functionapp start -g "$RESOURCE_GROUP" -n "$AZURE_FUNC_NAME"
+        env:
+          RESOURCE_GROUP: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).RESOURCE_GROUP_NAME.value }}
+          AZURE_FUNC_NAME: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).AZURE_FUNCTIONS_NAME.value }}
+
+      - name: Delete Zip file
+        run: rm az-function-dist.zip

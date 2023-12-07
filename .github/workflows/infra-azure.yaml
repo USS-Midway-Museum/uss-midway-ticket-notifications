@@ -1,0 +1,109 @@
+name: "[Infra] Azure Resources via Terraform"
+run-name: "INFRA Azure Resources [${{ inputs.RESOURCE_GROUP_NAME }}][${{ inputs.STACK_NAME }}][${{ inputs.STACK_PROFILE }}]"
+
+on:
+  workflow_dispatch:
+    inputs:
+      RESOURCE_GROUP_NAME:
+        required: true
+        description: Resource Group Name (Where the stack is deployed)
+      STACK_NAME:
+        required: true
+        description: Azure Stack Name
+        type: string
+      STACK_PROFILE:
+        required: true
+        description: Azure Stack Profile
+        type: choice
+        options:
+          - develop
+          - staging
+          - production
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+env:
+  ARM_TENANT_ID: ${{ vars.AZ_TENANT_ID }}
+  ARM_CLIENT_ID: ${{ vars.AZ_CLIENT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZ_SUBSCRIPTION_ID }}
+
+jobs:
+  terraform:
+    concurrency: ${{ github.workflow }}
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout '${{ github.ref_name }}'
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          .github/actions
+          terraform
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        client-id: ${{ vars.AZ_CLIENT_ID }}
+        tenant-id: ${{ vars.AZ_TENANT_ID }}
+        subscription-id: ${{ vars.AZ_SUBSCRIPTION_ID }}
+
+    - name: Terraform Init
+      uses: zingdevlimited/actions-helpers/azure/terraform-init@v3
+      with:
+        AZ_CLIENT_ID: ${{ vars.AZ_CLIENT_ID }}
+        AZ_TENANT_ID: ${{ vars.AZ_TENANT_ID }}
+        AZ_SUBSCRIPTION_ID: ${{ vars.AZ_SUBSCRIPTION_ID }}
+        STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars.STORAGE_ACCOUNT_RESOURCEGROUP }}
+        STORAGE_ACCOUNT_NAME: ${{ vars.STORAGE_ACCOUNT_NAME }}
+        STORAGE_ACCOUNT_CONTAINER: ${{ vars.STORAGE_ACCOUNT_CONTAINER }}
+        TERRAFORM_DIRECTORY: terraform/
+
+    - name: Terraform Plan
+      id: plan
+      working-directory: terraform/
+      run: |
+        planOutput=$(terraform plan\
+          -detailed-exitcode\
+          -input=false\
+          -no-color\
+          -out=TerraformPlan.txt) || resultCode=$?
+        echo "$planOutput"
+
+        if [ -z "$resultCode" ]; then
+          echo "::notice::No changes detected from terraform plan."
+          echo "CHANGES_DETECTED=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        elif [ "$resultCode" == "1" ]; then
+          exit 1
+        fi
+
+        echo "CHANGES_DETECTED=true" >> "$GITHUB_OUTPUT"
+        planOutput=$(echo "$planOutput" | grep -v "Refreshing state")
+
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        echo "PLAN_OUTPUT<<$EOF" >> "$GITHUB_OUTPUT"
+        echo "$planOutput" >> "$GITHUB_OUTPUT"
+        echo "$EOF" >> "$GITHUB_OUTPUT"
+      env:
+        TF_VAR_central_resource_group: ${{ inputs.RESOURCE_GROUP_NAME }}
+        TF_VAR_environment: ${{ inputs.STACK_NAME }}
+        TF_VAR_environment_profile: ${{ inputs.STACK_PROFILE }}
+
+    - name: Await Manual Approval
+      if: steps.plan.outputs.CHANGES_DETECTED == 'true'
+      uses: trstringer/manual-approval@a824dad59ac64ac825ab8725599e483e24aa2815 # v1.9.0
+      with:
+        secret: ${{ github.token }}
+        approvers: ${{ github.actor }}
+        minimum-approvals: 1
+        issue-title: "Changes to ${{ inputs.STACK_PROFILE }} Stack ${{ inputs.STACK_NAME }} in Resource Group ${{ inputs.RESOURCE_GROUP_NAME }}"
+        issue-body: ${{ steps.plan.outputs.PLAN_OUTPUT }}
+        exclude-workflow-initiator-as-approver: false
+
+    - name: Terraform Apply
+      if: steps.plan.outputs.CHANGES_DETECTED == 'true'
+      working-directory: terraform/
+      run: terraform apply -auto-approve TerraformPlan.txt
