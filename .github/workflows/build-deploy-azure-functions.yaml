@@ -112,12 +112,7 @@ jobs:
           result=$(cat appsettings-definition.json | envsubst)
           echo "$result" > appsettings-definition.json
         env:
-          sbnsproductxdev_SERVICEBUS: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).SERVICE_BUS_CONNECTION_STRING.value }}
-          AZURE_TABLE_NAME: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).CONFIG_TABLE_NAME.value }}
-          AZURE_KEYVAULT_URL: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).KEYVAULT_URL.value }}
-          AZURE_TABLE_STORAGE_ACCOUNT_NAME: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).STORAGE_ACCOUNT_NAME.value }}
-          AZURE_SERVICE_BUS_NAMESPACE: ${{fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).AZURE_SERVICE_BUS_NAMESPACE.value}}
-          SERVICE_BUS_INTERACTION_TOPIC_NAME: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).SERVICE_BUS_INTERACTION_TOPIC_NAME.value }}
+          APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).APPLICATIONINSIGHTS_CONNECTION_STRING.value }}
           
       - name: Deploy To Azure
         run: |
@@ -129,8 +124,8 @@ jobs:
 
           az functionapp start -g "$RESOURCE_GROUP" -n "$AZURE_FUNC_NAME"
         env:
-          RESOURCE_GROUP: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).RESOURCE_GROUP_NAME.value }}
-          AZURE_FUNC_NAME: ${{ fromJSON(steps.tfAzure.outputs.TF_OUTPUTS).AZURE_FUNCTIONS_NAME.value }}
+          RESOURCE_GROUP: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).RESOURCE_GROUP_NAME.value }}
+          AZURE_FUNC_NAME: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).AZURE_FUNCTIONS_NAME.value }}
 
       - name: Delete Zip file
         run: rm az-function-dist.zip
