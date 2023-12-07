@@ -3,22 +3,6 @@ run-name: "INFRA Azure Resources [${{ inputs.RESOURCE_GROUP_NAME }}][${{ inputs.
 
 on:
   workflow_dispatch:
-    inputs:
-      RESOURCE_GROUP_NAME:
-        required: true
-        description: Resource Group Name (Where the stack is deployed)
-      STACK_NAME:
-        required: true
-        description: Azure Stack Name
-        type: string
-      STACK_PROFILE:
-        required: true
-        description: Azure Stack Profile
-        type: choice
-        options:
-          - develop
-          - staging
-          - production
 
 permissions:
   id-token: write

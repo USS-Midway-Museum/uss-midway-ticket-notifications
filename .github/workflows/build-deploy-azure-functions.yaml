@@ -2,11 +2,6 @@ name: "[BUILD & DEPLOY] Build and Deploy Azure Functions"
 run-name: "BUILD Azure Functions and DEPLOY to Instance [${{ inputs.STACK_NAME }}]"
 on:
   workflow_dispatch:
-    inputs:
-      STACK_NAME:
-        description: Azure Stack Name
-        required: true
-        type: string
 
 permissions:
   id-token: write
