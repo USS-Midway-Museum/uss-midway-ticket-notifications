@@ -1,1 +1,2 @@
-To deploy, run in wsl and install zip
+# USS Midway Ticket Notifications
+Azure function 
