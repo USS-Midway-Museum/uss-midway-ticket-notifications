@@ -41,7 +41,7 @@ export const ticketsDataSchema = z.object({
 
 export const eventDataSchema = z.object({
   Envelope: z.object({
-    Header: headerDataSchema,
+    Header: headerDataSchema.omit({ SiteID: true }),
     Body: z.object({
       Events: z.object({
         Event: z.object({
@@ -85,7 +85,7 @@ export type EventData = z.infer<typeof eventDataSchema>;
 export type Contact = {
   firstName: string;
   lastName: string;
-  events: { EventID: number; EventName: string }[];
+  events: { EventID: string; EventName: string }[];
 };
 
 export type GetEventResponse = { StartDateTime: string; EventName: string };

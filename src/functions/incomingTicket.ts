@@ -8,7 +8,7 @@ export async function incomingTicket(request: HttpRequest, context: InvocationCo
   const { SourceID, TimeStamp } = header;
 
   // A map of phone numbers to contacts
-  const contacts = new Map<string, Contact>();
+  const contacts: Record<string, Contact> = {};
   for (const ticket of tickets) {
     const { EventID } = ticket;
     const { StartDateTime, EventName } = await ticketService.getEvent({
@@ -27,21 +27,24 @@ export async function incomingTicket(request: HttpRequest, context: InvocationCo
 
     const contact = ticket.TransactionContact;
     // Check if contact exists and doesn't have the event associated already
-    if (contacts[contact.Phone] && !contacts[contact.Phone].events.includes({ EventID, EventName })) {
-      contacts[contact.Phone].events.push({ EventID, EventName });
+    if (contacts[contact.Phone]) {
+      if (!contacts[contact.Phone].events.includes({ EventID, EventName })) {
+        contacts[contact.Phone].events.push({ EventID, EventName });
+      }
     } else {
       // Create the contact with the new event
       contacts[contact.Phone] = {
         firstName: contact.FirstName,
         lastName: contact.LastName,
-        events: { EventID, EventName },
+        events: [{ EventID, EventName }],
       };
     }
   }
 
-  for (const contact of contacts) {
-    for (const event of contact[1].events) {
-      ticketService.sendMessage(contact[0], event.EventName);
+  for (const [number, contact] of Object.entries(contacts)) {
+    for (const event of contact.events) {
+      const message = await ticketService.sendMessage(number, event.EventName);
+      console.log(message.status);
     }
   }
 

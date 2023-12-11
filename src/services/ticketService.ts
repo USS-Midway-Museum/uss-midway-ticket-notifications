@@ -15,14 +15,17 @@ import {
 export const TicketService = (request: HttpRequest) => {
   const parseIncoming = async () => {
     const incomingXMLString = await request.text();
-    let tickets: TicketData[];
-    let header: HeaderData;
-    parseString(incomingXMLString, { explicitArray: false }, function (err: Error, result: TicketsData) {
-      ticketsDataSchema.parse(result);
-      tickets.push(...result.Envelope.Body.Tickets.Ticket);
-      header = result.Envelope.Header;
+    return new Promise<{ header: HeaderData; tickets: TicketData[] }>((resolve, reject) => {
+      parseString(incomingXMLString, { explicitArray: false }, function (err: Error, result: TicketsData) {
+        if (err) {
+          reject(err);
+        }
+        ticketsDataSchema.parse(result);
+        const tickets = result.Envelope.Body.Tickets.Ticket;
+        const header = result.Envelope.Header;
+        resolve({ header, tickets });
+      });
     });
-    return { header, tickets };
   };
 
   const getEvent = async (data: {
@@ -54,11 +57,47 @@ export const TicketService = (request: HttpRequest) => {
       body: eGalaxyRequest,
     });
 
-    console.log(res);
+    // if (!res.ok) {
+    //   throw Error(await res.text());
+    // }
 
-    const incomingXMLString = await res.text();
+    const incomingXMLString = `<?xml version="1.0" encoding="UTF-8"?>
+    <Envelope>
+      <Header>
+        <MessageID>0</MessageID>
+        <MessageType>GetEventsResponse</MessageType>
+        <SourceID>1</SourceID>
+        <TimeStamp>2023-12-06 12:48:48</TimeStamp>
+        <EchoData></EchoData>
+        <SystemFields></SystemFields>
+      </Header>
+      <Body>
+        <Events>
+          <Event>
+            <ResponseCode>0</ResponseCode>
+            <EventID>243</EventID>
+            <StartDateTime>${new Date(new Date().getDate() + 3)}</StartDateTime>
+            <EndDateTime>2017-08-27 15:30:00</EndDateTime>
+            <EventTypeID>1</EventTypeID>
+            <OnSaleDateTime>2017-07-23 10:00:00</OnSaleDateTime>
+            <OffSaleDateTime>2017-08-27 14:50:00</OffSaleDateTime>
+            <ResourceID>1</ResourceID>
+            <UserEventNumber>0</UserEventNumber>
+            <Available>300</Available>
+            <TotalCapacity>300</TotalCapacity>
+            <Status>1</Status>
+            <HasRoster>NO</HasRoster>
+            <RSEventSeatMap>0</RSEventSeatMap>
+            <PrivateEvent>NO</PrivateEvent>
+            <HasHolds>NO</HasHolds>
+            <EventName>Dinosaurs 3-D</EventName>
+          </Event>
+        </Events>
+      </Body>
+    </Envelope>`;
+
     let response: GetEventResponse;
-    parseString(incomingXMLString, (err: Error, result: EventData) => {
+    parseString(incomingXMLString, { explicitArray: false }, (err: Error, result: EventData) => {
       eventDataSchema.parse(result);
       const { StartDateTime, EventName } = result.Envelope.Body.Events.Event;
       response = { StartDateTime, EventName };
