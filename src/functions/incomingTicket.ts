@@ -28,7 +28,7 @@ export async function incomingTicket(request: HttpRequest, context: InvocationCo
     const contact = ticket.TransactionContact;
     // Check if contact exists and doesn't have the event associated already
     if (contacts[contact.Phone]) {
-      if (!contacts[contact.Phone].events.includes({ EventID, EventName })) {
+      if (!contacts[contact.Phone].events.find((e) => e.EventID === ticket.EventID)) {
         contacts[contact.Phone].events.push({ EventID, EventName });
       }
     } else {
