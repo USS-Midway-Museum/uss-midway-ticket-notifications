@@ -96,13 +96,16 @@ export const TicketService = (request: HttpRequest) => {
       </Body>
     </Envelope>`;
 
-    let response: GetEventResponse;
-    parseString(incomingXMLString, { explicitArray: false }, (err: Error, result: EventData) => {
-      eventDataSchema.parse(result);
-      const { StartDateTime, EventName } = result.Envelope.Body.Events.Event;
-      response = { StartDateTime, EventName };
+    return new Promise<GetEventResponse>((resolve, reject) => {
+      parseString(incomingXMLString, { explicitArray: false }, (err: Error, result: EventData) => {
+        if (err) {
+          reject(err);
+        }
+        eventDataSchema.parse(result);
+        const { StartDateTime, EventName } = result.Envelope.Body.Events.Event;
+        resolve({ StartDateTime, EventName });
+      });
     });
-    return response;
   };
 
   const sendMessage = async (phoneNumber: string, EventName: string) => {
