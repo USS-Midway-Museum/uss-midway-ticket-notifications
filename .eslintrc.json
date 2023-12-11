@@ -36,6 +36,7 @@ module.exports = {
   rules: {
     quotes: ["error", "double"],
     semi: ["error", "always"],
+    "quote-props": [1, "as-needed"],
 
     // import and export rules
     // we want to have our project exports to be named (not default) unless necessary
