@@ -1,13 +1,14 @@
 import { HttpRequest } from "@azure/functions";
 import { twilioClient } from "./twilioService";
-import { parseString, processors } from "xml2js";
+import { parseString } from "xml2js";
+import { randomUUID } from "crypto";
 import {
   ticketsDataSchema,
   TicketsData,
   TicketData,
   HeaderData,
   EventData,
-  eventDataSchema,
+  eventsDataSchema,
   GetEventResponse,
   Contact,
 } from "../types";
@@ -29,7 +30,11 @@ export class TicketService {
         ticketsDataSchema.parse(result);
         const tickets = result.Envelope.Body.Tickets.Ticket;
         const header = result.Envelope.Header;
-        resolve({ header, tickets });
+        if (Array.isArray(tickets)) {
+          resolve({ header, tickets });
+        } else {
+          resolve({ header, tickets: [tickets] });
+        }
       });
     });
   };
@@ -40,7 +45,7 @@ export class TicketService {
     const eGalaxyRequest = `<?xml version="1.0"?>
     <Envelope>
       <Header>
-        <MessageID>0</MessageID>
+        <MessageID>${randomUUID()}</MessageID>
         <MessageType>GetEvents</MessageType>
         <SourceID>${sourceID}</SourceID>
         <TimeStamp>${timeStamp}</TimeStamp>
@@ -71,13 +76,18 @@ export class TicketService {
         if (err) {
           reject(err);
         }
-        eventDataSchema.parse(result);
-        const eventResponses = result.Envelope.Body.Events.Event.map((event) => ({
-          StartDateTime: event.StartDateTime,
-          EventName: event.EventName,
-          EventID: event.EventID,
-        }));
-        resolve(eventResponses);
+        eventsDataSchema.parse(result);
+        if (Array.isArray(result.Envelope.Body.Events.Event)) {
+          const eventResponses = result.Envelope.Body.Events.Event.map((event) => ({
+            StartDateTime: event.StartDateTime,
+            EventName: event.EventName,
+            EventID: event.EventID,
+          }));
+          resolve(eventResponses);
+        } else {
+          const { StartDateTime, EventName, EventID } = result.Envelope.Body.Events.Event;
+          resolve([{ StartDateTime, EventName, EventID }]);
+        }
       });
     });
 

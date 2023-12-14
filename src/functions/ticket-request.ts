@@ -45,13 +45,17 @@ export async function ticketRequest(request: HttpRequest, context: InvocationCon
       continue;
     }
 
-    // Remove duplicate contacts
-    const filteredContacts = new Set(events[EventID].contacts);
-    events[EventID].contacts = Array.from(filteredContacts);
+    // Remove duplicate contact phonenumbers in an even contact list
+    const filteredContacts = events[EventID].contacts.filter(
+      (contact, index) => events[EventID].contacts.findIndex((obj) => contact.phoneNumber === obj.phoneNumber) === index
+    );
+    console.log(filteredContacts);
+    events[EventID].contacts = filteredContacts;
 
     // Loop through contacts for the EventID and send messages
     for (const contact of events[EventID].contacts) {
-      ticketService.sendMessage(contact, EventName, StartDateTime);
+      const message = await ticketService.sendMessage(contact, EventName, StartDateTime);
+      console.log(message);
     }
   }
 
