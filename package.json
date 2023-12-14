@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Azure function for USS Midway ticket notifications",
   "license": "MIT",
+  "packageManager": "yarn@1.22.21",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",

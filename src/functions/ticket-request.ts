@@ -2,8 +2,8 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { TicketService } from "../services/ticketService";
 import { Contact } from "../types";
 
-export async function incomingTicket(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  const ticketService = TicketService(request);
+export async function ticketRequest(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  const ticketService = new TicketService(request);
   const { header, tickets } = await ticketService.parseIncoming();
   const { SourceID, TimeStamp } = header;
 
@@ -54,5 +54,5 @@ export async function incomingTicket(request: HttpRequest, context: InvocationCo
 app.http("ticket-request", {
   methods: ["GET", "POST"],
   authLevel: "function",
-  handler: incomingTicket,
+  handler: ticketRequest,
 });
