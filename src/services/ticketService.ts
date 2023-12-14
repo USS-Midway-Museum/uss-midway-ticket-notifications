@@ -1,7 +1,6 @@
 import { HttpRequest } from "@azure/functions";
 import { twilioClient } from "./twilioService";
 import { parseString } from "xml2js";
-import { inspect } from "util";
 import {
   ticketsDataSchema,
   TicketsData,
@@ -12,9 +11,16 @@ import {
   GetEventResponse,
 } from "../types";
 
-export const TicketService = (request: HttpRequest) => {
-  const parseIncoming = async () => {
-    const incomingXMLString = await request.text();
+export class TicketService {
+  private request: HttpRequest;
+  private localCache: Record<string, GetEventResponse>;
+
+  constructor(request: HttpRequest) {
+    this.request = request;
+  }
+
+  parseIncoming = async () => {
+    const incomingXMLString = await this.request.text();
     return new Promise<{ header: HeaderData; tickets: TicketData[] }>((resolve, reject) => {
       parseString(incomingXMLString, { explicitArray: false }, function (err: Error, result: TicketsData) {
         if (err) {
@@ -28,12 +34,17 @@ export const TicketService = (request: HttpRequest) => {
     });
   };
 
-  const getEvent = async (data: {
-    sourceID: string;
-    timeStamp: string;
-    eventId: string;
-  }): Promise<GetEventResponse> => {
+  getEvent = async (data: { sourceID: string; timeStamp: string; eventId: string }): Promise<GetEventResponse> => {
     const { sourceID, timeStamp, eventId } = data;
+
+    // Check if the event ID exists in this class already
+    const localCacheHit: GetEventResponse | undefined = this.localCache[eventId];
+    if (localCacheHit) {
+      return localCacheHit;
+    }
+
+    // Cache miss, query eGalaxy
+
     const eGalaxyRequest = `<?xml version="1.0"?>
     <Envelope>
       <Header>
@@ -96,26 +107,27 @@ export const TicketService = (request: HttpRequest) => {
       </Body>
     </Envelope>`;
 
-    let response: GetEventResponse;
-    parseString(incomingXMLString, { explicitArray: false }, (err: Error, result: EventData) => {
-      eventDataSchema.parse(result);
-      const { StartDateTime, EventName } = result.Envelope.Body.Events.Event;
-      response = { StartDateTime, EventName };
+    const parsedResponse = await new Promise<GetEventResponse>((resolve, reject) => {
+      parseString(incomingXMLString, { explicitArray: false }, (err: Error, result: EventData) => {
+        if (err) {
+          reject(err);
+        }
+        eventDataSchema.parse(result);
+        const { StartDateTime, EventName } = result.Envelope.Body.Events.Event;
+        resolve({ StartDateTime, EventName });
+      });
     });
-    return response;
+
+    // Cache response locally
+    this.localCache[eventId] = parsedResponse;
+    return parsedResponse;
   };
 
-  const sendMessage = async (phoneNumber: string, EventName: string) => {
+  sendMessage = async (phoneNumber: string, EventName: string) => {
     return twilioClient.messages.create({
       from: "+447883305646",
       body: `Thank you for purchasing tickets for ${EventName}. We look forward to seeing you!`,
       to: phoneNumber,
     });
   };
-
-  return {
-    parseIncoming,
-    getEvent,
-    sendMessage,
-  };
-};
+}
