@@ -44,25 +44,29 @@ export const eventDataSchema = z.object({
     Header: headerDataSchema.omit({ SiteID: true }),
     Body: z.object({
       Events: z.object({
-        Event: z.object({
-          ResponseCode: z.string(),
-          EventID: z.string(),
-          StartDateTime: z.string(),
-          EndDateTime: z.string(),
-          EventTypeID: z.string(),
-          OnSaleDateTime: z.string(),
-          OffSaleDateTime: z.string(),
-          ResourceID: z.string(),
-          UserEventNumber: z.string(),
-          Available: z.string(),
-          TotalCapacity: z.string(),
-          Status: z.string(),
-          HasRoster: z.string(),
-          RSEventSeatMap: z.string(),
-          PrivateEvent: z.string(),
-          HasHolds: z.string(),
-          EventName: z.string(),
-        }),
+        Event: z
+          .array(
+            z.object({
+              ResponseCode: z.string(),
+              EventID: z.string(),
+              StartDateTime: z.string(),
+              EndDateTime: z.string(),
+              EventTypeID: z.string(),
+              OnSaleDateTime: z.string(),
+              OffSaleDateTime: z.string(),
+              ResourceID: z.string(),
+              UserEventNumber: z.string(),
+              Available: z.string(),
+              TotalCapacity: z.string(),
+              Status: z.string(),
+              HasRoster: z.string(),
+              RSEventSeatMap: z.string(),
+              PrivateEvent: z.string(),
+              HasHolds: z.string(),
+              EventName: z.string(),
+            })
+          )
+          .min(1),
       }),
     }),
   }),
@@ -85,7 +89,11 @@ export type EventData = z.infer<typeof eventDataSchema>;
 export type Contact = {
   firstName: string;
   lastName: string;
-  events: { EventID: string; EventName: string }[];
+  phoneNumber: string;
 };
 
-export type GetEventResponse = { StartDateTime: string; EventName: string };
+export type Events = {
+  contacts: Contact[];
+};
+
+export type GetEventResponse = { EventID: string; StartDateTime: string; EventName: string };

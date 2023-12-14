@@ -1,6 +1,6 @@
 import { HttpRequest } from "@azure/functions";
 import { twilioClient } from "./twilioService";
-import { parseString } from "xml2js";
+import { parseString, processors } from "xml2js";
 import {
   ticketsDataSchema,
   TicketsData,
@@ -9,11 +9,11 @@ import {
   EventData,
   eventDataSchema,
   GetEventResponse,
+  Contact,
 } from "../types";
 
 export class TicketService {
   private request: HttpRequest;
-  private localCache: Record<string, GetEventResponse>;
 
   constructor(request: HttpRequest) {
     this.request = request;
@@ -34,16 +34,8 @@ export class TicketService {
     });
   };
 
-  getEvent = async (data: { sourceID: string; timeStamp: string; eventId: string }): Promise<GetEventResponse> => {
-    const { sourceID, timeStamp, eventId } = data;
-
-    // Check if the event ID exists in this class already
-    const localCacheHit: GetEventResponse | undefined = this.localCache[eventId];
-    if (localCacheHit) {
-      return localCacheHit;
-    }
-
-    // Cache miss, query eGalaxy
+  getEvents = async (data: { sourceID: string; timeStamp: string; events: string[] }): Promise<GetEventResponse[]> => {
+    const { sourceID, timeStamp, events } = data;
 
     const eGalaxyRequest = `<?xml version="1.0"?>
     <Envelope>
@@ -56,7 +48,7 @@ export class TicketService {
       <Body>
         <GetEvents>
           <EventIDs>
-            <EventID>${eventId}</EventID>
+            ${events.map((id) => "<EventID>" + id + "</EventID>")}
           </EventIDs>
         </GetEvents>
       </Body>
@@ -107,27 +99,39 @@ export class TicketService {
       </Body>
     </Envelope>`;
 
-    const parsedResponse = await new Promise<GetEventResponse>((resolve, reject) => {
+    const parsedResponse = await new Promise<GetEventResponse[]>((resolve, reject) => {
       parseString(incomingXMLString, { explicitArray: false }, (err: Error, result: EventData) => {
         if (err) {
           reject(err);
         }
         eventDataSchema.parse(result);
-        const { StartDateTime, EventName } = result.Envelope.Body.Events.Event;
-        resolve({ StartDateTime, EventName });
+        const eventResponses = result.Envelope.Body.Events.Event.map((event) => ({
+          StartDateTime: event.StartDateTime,
+          EventName: event.EventName,
+          EventID: event.EventID,
+        }));
+        resolve(eventResponses);
       });
     });
 
-    // Cache response locally
-    this.localCache[eventId] = parsedResponse;
     return parsedResponse;
   };
 
-  sendMessage = async (phoneNumber: string, EventName: string) => {
-    return twilioClient.messages.create({
-      from: "+447883305646",
-      body: `Thank you for purchasing tickets for ${EventName}. We look forward to seeing you!`,
-      to: phoneNumber,
-    });
+  sendMessage = async (contact: Contact, EventName: string, EventTime: string) => {
+    // Explicity check for non falsy and truthy values
+    if (process.env["USE_TEST_PHONE_NUMBER"] === "1") {
+      // Send any twilio messages to a test phone number
+      return twilioClient.messages.create({
+        from: "+447883305646",
+        body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+        to: process.env["TEST_PHONE_NUMBER"],
+      });
+    } else {
+      return twilioClient.messages.create({
+        from: "+447883305646",
+        body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+        to: contact.phoneNumber,
+      });
+    }
   };
 }

@@ -1,50 +1,57 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { TicketService } from "../services/ticketService";
-import { Contact } from "../types";
+import { Events } from "../types";
 
 export async function ticketRequest(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   const ticketService = new TicketService(request);
   const { header, tickets } = await ticketService.parseIncoming();
   const { SourceID, TimeStamp } = header;
 
-  // A map of phone numbers to contacts
-  const contacts: Record<string, Contact> = {};
+  // A record of events with event IDs as keys and event info and contacts as values
+  const events: Record<string, Events> = {};
+
+  // Loop through tickets and populate events record
   for (const ticket of tickets) {
     const { EventID } = ticket;
-    const { StartDateTime, EventName } = await ticketService.getEvent({
-      sourceID: SourceID,
-      timeStamp: TimeStamp,
-      eventId: EventID,
-    });
+    // Initialize empty contact array on creation of eventID property
+    if (events[EventID] === undefined) {
+      events[EventID] = { contacts: [] };
+    }
 
+    // Push contact onto record
+    const contact = ticket.TransactionContact;
+    events[EventID].contacts.push({
+      firstName: contact.FirstName,
+      lastName: contact.LastName,
+      phoneNumber: contact.Phone,
+    });
+  }
+
+  // Get event times for the events
+  const eventTimes = await ticketService.getEvents({
+    sourceID: SourceID,
+    timeStamp: TimeStamp,
+    events: Object.keys(events),
+  });
+
+  // Push event details on to events records
+  for (const event of eventTimes) {
+    const { EventID, EventName, StartDateTime } = event;
     const today = new Date();
     const todayPlus24Hours = new Date(today.getDate() + 1);
 
-    // If the event start time is less than 24 hours away
+    // If the event start time is less than 24 hours away, skip the send message step
     if (new Date(StartDateTime).getTime() > todayPlus24Hours.getTime()) {
-      continue; // skip loop
+      continue;
     }
 
-    const contact = ticket.TransactionContact;
-    // Check if contact exists and doesn't have the event associated already
-    if (contacts[contact.Phone]) {
-      if (!contacts[contact.Phone].events.find((e) => e.EventID === ticket.EventID)) {
-        contacts[contact.Phone].events.push({ EventID, EventName });
-      }
-    } else {
-      // Create the contact with the new event
-      contacts[contact.Phone] = {
-        firstName: contact.FirstName,
-        lastName: contact.LastName,
-        events: [{ EventID, EventName }],
-      };
-    }
-  }
+    // Remove duplicate contacts
+    const filteredContacts = new Set(events[EventID].contacts);
+    events[EventID].contacts = Array.from(filteredContacts);
 
-  for (const [number, contact] of Object.entries(contacts)) {
-    for (const event of contact.events) {
-      const message = await ticketService.sendMessage(number, event.EventName);
-      console.log(message.status);
+    // Loop through contacts for the EventID and send messages
+    for (const contact of events[EventID].contacts) {
+      ticketService.sendMessage(contact, EventName, StartDateTime);
     }
   }
 
