@@ -15,11 +15,11 @@ Below are the variables you will need to adjust
 
 ### Locally
 
-The azure function can be run on localhost using the Azure Function Core Tools. In order to get set up, follow the deployment steps [here](../deployment/user-guide.md#local-deployment). During the set up step, set the variables in the table to above to their respective values
+The azure function can be run on localhost using the Azure Function Core Tools. In order to get set up, follow the deployment steps [here](../deployment/user-guide.md#locally). During the set up step, set the variables in the table to above to their respective values
 
 ### Azure
 
-If the azure functions are not deployed already, follow the steps [here](../deployment/user-guide.md#azure-deployment)
+If the azure functions are not deployed already, follow the steps [here](../deployment/user-guide.md#azure)
 
 To adjust the deployed functions operation, navigate to the [azure portal](https://portal.azure.com/) and locate your function app that is hosting your function code. Navigate to the **Configuration** section under **Settings** in the left panel, and find the **USE_TEST_PHONE_NUMBER** and **TEST_PHONE_NUMBER** values. Change these variables to their respective values in the table above.
 
