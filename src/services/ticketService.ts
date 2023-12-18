@@ -99,13 +99,13 @@ export class TicketService {
     if (process.env["USE_TEST_PHONE_NUMBER"] === "true") {
       // Send any twilio messages to a test phone number
       return twilioClient.messages.create({
-        from: "+447883305646",
+        messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
         body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
         to: process.env["TEST_PHONE_NUMBER"],
       });
     } else {
       return twilioClient.messages.create({
-        from: "+447883305646",
+        messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
         body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
         to: contact.phoneNumber,
       });

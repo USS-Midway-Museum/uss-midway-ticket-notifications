@@ -9,6 +9,7 @@
     "TWILIO_API_SECRET": "",
     "USE_TEST_PHONE_NUMBER": "true | false",
     "TEST_PHONE_NUMBER": "",
-    "E_GALAXY_URL": ""
+    "E_GALAXY_URL": "",
+    "MESSAGING_SERVICE_SID": ""
   }
 }
