@@ -59,7 +59,7 @@ export class TicketService {
       </Body>
     </Envelope>`;
 
-    const res = await fetch("http://174.78.189.50:3051", {
+    const res = await fetch(process.env["E_GALAXY_URL"], {
       method: "POST",
       headers: { "content-type": "text/xml" },
       body: eGalaxyRequest,
@@ -96,7 +96,7 @@ export class TicketService {
 
   sendMessage = async (contact: Contact, EventName: string, EventTime: string) => {
     // Explicity check for non falsy and truthy values
-    if (process.env["USE_TEST_PHONE_NUMBER"] === "1") {
+    if (process.env["USE_TEST_PHONE_NUMBER"] === "true") {
       // Send any twilio messages to a test phone number
       return twilioClient.messages.create({
         from: "+447883305646",
