@@ -46,12 +46,12 @@ jobs:
     - name: Terraform Init
       uses: zingdevlimited/actions-helpers/azure/terraform-init@v3
       with:
-        AZ_CLIENT_ID: ${{ vars[format('{0}_vars.AZ_CLIENT_ID', inputs.ENVIRONMENT)] }}
-        AZ_TENANT_ID: ${{ vars[format('{0}_vars.AZ_TENANT_ID', inputs.ENVIRONMENT)] }}
-        AZ_SUBSCRIPTION_ID: ${{ vars[format('{0}_vars.AZ_SUBSCRIPTION_ID', inputs.ENVIRONMENT)] }}
-        STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars[format('{0}_vars.STORAGE_ACCOUNT_RESOURCEGROUP', inputs.ENVIRONMENT)] }}
-        STORAGE_ACCOUNT_NAME: ${{ vars[format('{0}_vars.STORAGE_ACCOUNT_NAME', inputs.ENVIRONMENT)] }}
-        STORAGE_ACCOUNT_CONTAINER: ${{ vars[format('{0}_vars.STORAGE_ACCOUNT_CONTAINER', inputs.ENVIRONMENT)] }}
+        AZ_CLIENT_ID: ${{ vars[format('{0}_AZ_CLIENT_ID', inputs.ENVIRONMENT)] }}
+        AZ_TENANT_ID: ${{ vars[format('{0}_AZ_TENANT_ID', inputs.ENVIRONMENT)] }}
+        AZ_SUBSCRIPTION_ID: ${{ vars[format('{0}_AZ_SUBSCRIPTION_ID', inputs.ENVIRONMENT)] }}
+        STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars[format('{0}_STORAGE_ACCOUNT_RESOURCEGROUP', inputs.ENVIRONMENT)] }}
+        STORAGE_ACCOUNT_NAME: ${{ vars[format('{0}_STORAGE_ACCOUNT_NAME', inputs.ENVIRONMENT)] }}
+        STORAGE_ACCOUNT_CONTAINER: ${{ vars[format('{0}_STORAGE_ACCOUNT_CONTAINER', inputs.ENVIRONMENT)] }}
         TERRAFORM_DIRECTORY: terraform/
 
     - name: Terraform Plan
