@@ -53,7 +53,7 @@ resource "azurerm_service_plan" "asp" {
 //needs sorting
 
 resource "azurerm_storage_account" "function_app_storage_account" {
-  name                     = "ussmidwaytk${var.environment}${local.postfix}"
+  name                     = "stussmtk${var.environment}${local.postfix}"
   resource_group_name      = data.azurerm_resource_group.rg.name
   location                 = data.azurerm_resource_group.rg.location
   account_tier             = "Standard"
