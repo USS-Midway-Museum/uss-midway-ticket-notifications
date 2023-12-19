@@ -123,7 +123,7 @@ export class TicketService {
         // If outside opening hours, send message at opening hour + 15 with random offset to spread out message load
         const offset = 15 + Math.floor(Math.random() * 10);
         // if past closing hour, add 24hours to the sendTime
-        const add24hrs = currentTime < parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
+        const add24hrs = currentTime > parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
         let sendTime = add(parse(process.env["OPENING_HOUR"], "HH:mm", currentTime), { minutes: offset });
         if (add24hrs) {
           sendTime = add(sendTime, { days: 1 });
