@@ -108,8 +108,6 @@ export class TicketService {
       const currentTime = new Date();
       const startTime = parse(process.env["OPENING_HOUR"], "HH:mm", currentTime);
       const endTime = parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
-      console.log(startTime);
-      console.log(endTime);
       const isOpen = isWithinInterval(currentTime, {
         start: startTime,
         end: endTime,
@@ -124,8 +122,12 @@ export class TicketService {
       } else {
         // If outside opening hours, send message at opening hour + 15 with random offset to spread out message load
         const offset = 15 + Math.floor(Math.random() * 10);
-        const sendTime = add(parse(process.env["OPENING_HOUR"], "HH:mm", currentTime), { minutes: offset });
-        console.log(sendTime);
+        // if past closing hour, add 24hours to the sendTime
+        const add24hrs = currentTime < parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
+        let sendTime = add(parse(process.env["OPENING_HOUR"], "HH:mm", currentTime), { minutes: offset });
+        if (add24hrs) {
+          sendTime = add(sendTime, { days: 1 });
+        }
         return twilioClient.messages.create({
           messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
           scheduleType: "fixed",
