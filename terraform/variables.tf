@@ -1,6 +1,11 @@
 # Inputs
 
-variable "central_resource_group" {
+variable "plan_sku" {
+  type     = string
+  nullable = false
+}
+
+variable "resource_group" {
   type     = string
   nullable = false
 }
