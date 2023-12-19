@@ -74,16 +74,24 @@ Please set up all of the following variables/secrets:
 
 | Variable | Value |
 |---|---|
+| DEVELOP_AZ_TENANT_ID | The Microsoft Entra ID(formerly Azure Active Directory) [Tenant ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id) | No |
+| DEVELOP_AZ_CLIENT_ID | The Client ID of the [Managed Identity](#user-assigned-managed-identity) you created. Found by navigating into the Managed Identity resource under the `Overview` tab | No |
+| DEVELOP_AZ_SUBSCRIPTION_ID | The Azure [Subscription ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id) used to host the resources | No |
+| DEVELOP_STORAGE_ACCOUNT_RESOURCEGROUP | The name of the **Resource Group** containing the [Terraform State Storage Account](#terraform-state-storage-account) | No |
+| DEVELOP_STORAGE_ACCOUNT_NAME | The name of the [Terraform State Storage Account](#terraform-state-storage-account) | No |
+| DEVELOP_STORAGE_ACCOUNT_CONTAINER | The name of the Container that you created under the [Terraform State Storage Account](#terraform-state-storage-account) | No |
+| DEVELOP_RESOURCE_GROUP | The name of the [Deployment Resource Group](#deployment-resource-group) | No |
 | DEVELOP_TWILIO_ACCOUNT_SID | Get from the [console](https://console.twilio.com/) |
 | DEVELOP_TWILIO_API_KEY | Get from the [console](https://console.twilio.com/) in Account > API keys & tokens > Create API key|
 | DEVELOP_TWILIO_API_SECRET | Get from the api key creation stage |
-| DEVELOP_USE_TEST_PHONE_NUMBER | 1 to use the test phone number, 0 to not use the test phone number |
+| DEVELOP_USE_TEST_PHONE_NUMBER | true to use the test phone number, false to not use the test phone number |
 | DEVELOP_TEST_PHONE_NUMBER | Any valid E.164 phone number |
 | DEVELOP_RUN_FROM_PACKAGE | Set to 1 to run from `/home/data/SitePackages` instead of `/home/site/wwwroot` |
 | DEVELOP_E_GALAXY_URL | URL/IP address for querying egalaxy on event ids |
 | DEVELOP_MESSAGING_SERVICE_SID | Get from the [console](https://console.twilio.com/) in **Messaging** |
 | DEVELOP_OPENING_HOUR | Handle the conversion from PST to UTC manually, then use the UTC Hour |
 | DEVELOP_CLOSING_HOUR | Handle the conversion from PST to UTC manually, then use the UTC Hour | 
+| DEVELOP_PLAN_SKU | 
 
 ## Triggering Deployment
 
