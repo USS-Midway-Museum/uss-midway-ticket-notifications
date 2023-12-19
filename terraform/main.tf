@@ -61,12 +61,6 @@ resource "azurerm_storage_account" "function_app_storage_account" {
   tags                = local.common_tags
 }
 
-resource "azurerm_role_assignment" "tf_table_access" {
-  scope                = azurerm_storage_account.function_app_storage_account.id
-  role_definition_name = "Storage Table Data Contributor"
-  principal_id         = data.azurerm_client_config.current.object_id
-}
-
 resource "azurerm_log_analytics_workspace" "log-analytics" {
   name                = "workspace-${local.postfix}"
   location            = data.azurerm_resource_group.rg.location
