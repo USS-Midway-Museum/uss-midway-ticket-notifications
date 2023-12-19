@@ -1,8 +1,17 @@
 name: "[Infra] Azure Resources via Terraform"
-run-name: "INFRA Azure Resources [${{ inputs.RESOURCE_GROUP_NAME }}][${{ inputs.STACK_NAME }}][${{ inputs.STACK_PROFILE }}]"
+run-name: "INFRA Azure Resources [${{ inputs.ENVIRONMENT }}]"
 
 on:
   workflow_dispatch:
+    inputs:
+      ENVIRONMENT:
+        required: true
+        type: choice
+        description: "Environment"
+        options:
+          - develop
+          - uat
+          - prod
 
 permissions:
   id-token: write
@@ -10,9 +19,9 @@ permissions:
   issues: write
 
 env:
-  ARM_TENANT_ID: ${{ vars.AZ_TENANT_ID }}
-  ARM_CLIENT_ID: ${{ vars.AZ_CLIENT_ID }}
-  ARM_SUBSCRIPTION_ID: ${{ vars.AZ_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ vars[format('{0}_AZ_TENANT_ID', inputs.ENVIRONMENT)] }}
+  ARM_CLIENT_ID: ${{ vars[format('{0}_AZ_CLIENT_ID', inputs.ENVIRONMENT)] }}
+  ARM_SUBSCRIPTION_ID: ${{ vars[format('{0}_AZ_SUBSCRIPTION_ID', inputs.ENVIRONMENT)] }}
 
 jobs:
   terraform:
@@ -30,19 +39,19 @@ jobs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        client-id: ${{ vars.AZ_CLIENT_ID }}
-        tenant-id: ${{ vars.AZ_TENANT_ID }}
-        subscription-id: ${{ vars.AZ_SUBSCRIPTION_ID }}
+        client-id: ${{ vars[format('{0}_AZ_CLIENT_ID', inputs.ENVIRONMENT)] }}
+        tenant-id: ${{ vars[format('{0}_AZ_TENANT_ID', inputs.ENVIRONMENT)] }}
+        subscription-id: ${{ vars[format('{0}_AZ_SUBSCRIPTION_ID', inputs.ENVIRONMENT)] }}
 
     - name: Terraform Init
       uses: zingdevlimited/actions-helpers/azure/terraform-init@v3
       with:
-        AZ_CLIENT_ID: ${{ vars.AZ_CLIENT_ID }}
-        AZ_TENANT_ID: ${{ vars.AZ_TENANT_ID }}
-        AZ_SUBSCRIPTION_ID: ${{ vars.AZ_SUBSCRIPTION_ID }}
-        STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars.STORAGE_ACCOUNT_RESOURCEGROUP }}
-        STORAGE_ACCOUNT_NAME: ${{ vars.STORAGE_ACCOUNT_NAME }}
-        STORAGE_ACCOUNT_CONTAINER: ${{ vars.STORAGE_ACCOUNT_CONTAINER }}
+        AZ_CLIENT_ID: ${{ vars[format('{0}_vars.AZ_CLIENT_ID', inputs.ENVIRONMENT)] }}
+        AZ_TENANT_ID: ${{ vars[format('{0}_vars.AZ_TENANT_ID', inputs.ENVIRONMENT)] }}
+        AZ_SUBSCRIPTION_ID: ${{ vars[format('{0}_vars.AZ_SUBSCRIPTION_ID', inputs.ENVIRONMENT)] }}
+        STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars[format('{0}_vars.STORAGE_ACCOUNT_RESOURCEGROUP', inputs.ENVIRONMENT)] }}
+        STORAGE_ACCOUNT_NAME: ${{ vars[format('{0}_vars.STORAGE_ACCOUNT_NAME', inputs.ENVIRONMENT)] }}
+        STORAGE_ACCOUNT_CONTAINER: ${{ vars[format('{0}_vars.STORAGE_ACCOUNT_CONTAINER', inputs.ENVIRONMENT)] }}
         TERRAFORM_DIRECTORY: terraform/
 
     - name: Terraform Plan
@@ -72,20 +81,8 @@ jobs:
         echo "$planOutput" >> "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
       env:
-        TF_VAR_central_resource_group: ${{ inputs.RESOURCE_GROUP_NAME }}
-        TF_VAR_environment: ${{ inputs.STACK_NAME }}
-        TF_VAR_environment_profile: ${{ inputs.STACK_PROFILE }}
-
-    - name: Await Manual Approval
-      if: steps.plan.outputs.CHANGES_DETECTED == 'true'
-      uses: trstringer/manual-approval@a824dad59ac64ac825ab8725599e483e24aa2815 # v1.9.0
-      with:
-        secret: ${{ github.token }}
-        approvers: ${{ github.actor }}
-        minimum-approvals: 1
-        issue-title: "Changes to ${{ inputs.STACK_PROFILE }} Stack ${{ inputs.STACK_NAME }} in Resource Group ${{ inputs.RESOURCE_GROUP_NAME }}"
-        issue-body: ${{ steps.plan.outputs.PLAN_OUTPUT }}
-        exclude-workflow-initiator-as-approver: false
+        TF_VAR_resource_group: ${{ vars[format('{0}_RESOURCE_GROUP', inputs.ENVIRONMENT)] }}
+        TF_VAR_environment: ${{ inputs.ENVIRONMENT }}
 
     - name: Terraform Apply
       if: steps.plan.outputs.CHANGES_DETECTED == 'true'
