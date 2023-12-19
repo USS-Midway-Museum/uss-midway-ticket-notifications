@@ -1,5 +1,10 @@
 # Inputs
 
+variable "resource_group" {
+  type     = string
+  nullable = false
+}
+
 variable "environment" {
   type     = string
   nullable = false
