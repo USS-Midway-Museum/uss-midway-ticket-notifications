@@ -8,6 +8,10 @@
     "TWILIO_API_KEY": "",
     "TWILIO_API_SECRET": "",
     "USE_TEST_PHONE_NUMBER": "1 | 0",
-    "TEST_PHONE_NUMBER": ""
+    "TEST_PHONE_NUMBER": "",
+    "E_GALAXY_URL": "",
+    "MESSAGING_SERVICE_SID": "",
+    "OPENING_HOUR": "",
+    "CLOSING_HOUR": ""
   }
 }

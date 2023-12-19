@@ -10,6 +10,10 @@ This doc details how to run the azure functions locally and on azure. Below is a
 | USE_TEST_PHONE_NUMBER | 1 to use the test phone number, 0 to not use the test phone number |
 | TEST_PHONE_NUMBER | Any valid E.164 phone number |
 | RUN_FROM_PACKAGE | Set to 1 to run from `/home/data/SitePackages` instead of `/home/site/wwwroot` |
+| E_GALAXY_URL | URL/IP address for querying egalaxy on event ids |
+| MESSAGING_SERVICE_SID | Get from the [console](https://console.twilio.com/) in **Messaging** |
+| OPENING_HOUR | Handle the conversion from PST to UTC manually, then use the UTC Hour |
+| CLOSING_HOUR | Handle the conversion from PST to UTC manually, then use the UTC Hour | 
 
 ## Locally
 
