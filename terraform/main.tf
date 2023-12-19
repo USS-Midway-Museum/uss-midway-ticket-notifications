@@ -42,7 +42,7 @@ locals {
 }
 
 resource "azurerm_service_plan" "asp" {
-  name                = "ASP-uss-midway-ticket-notifications-${var.environment}"
+  name                = "ASP-uss-midway-ticket-notifications-${var.environment}-${local.postfix}"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   os_type             = "Linux"
@@ -53,7 +53,7 @@ resource "azurerm_service_plan" "asp" {
 //needs sorting
 
 resource "azurerm_storage_account" "function_app_storage_account" {
-  name                     = "ussmidwaytk${var.environment}"
+  name                     = "ussmidwaytk${var.environment}${local.postfix}"
   resource_group_name      = data.azurerm_resource_group.rg.name
   location                 = data.azurerm_resource_group.rg.location
   account_tier             = "Standard"
@@ -90,7 +90,7 @@ resource "azurerm_application_insights" "app_insights" {
 
 
 resource "azurerm_linux_function_app" "function_app" {
-  name                = "uss-midway-ticket-notifications-${var.environment}"
+  name                = "uss-midway-ticket-notifications-${var.environment}-${local.postfix}"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   storage_account_name       = azurerm_storage_account.function_app_storage_account.name
