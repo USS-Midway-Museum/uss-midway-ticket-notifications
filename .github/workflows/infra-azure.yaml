@@ -83,6 +83,7 @@ jobs:
       env:
         TF_VAR_resource_group: ${{ vars[format('{0}_RESOURCE_GROUP', inputs.ENVIRONMENT)] }}
         TF_VAR_environment: ${{ inputs.ENVIRONMENT }}
+        TF_VAR_plan_sku: ${{ vars[format('{0}_PLAN_SKU', inputs.ENVIRONMENT)] }}
 
     - name: Terraform Apply
       if: steps.plan.outputs.CHANGES_DETECTED == 'true'
