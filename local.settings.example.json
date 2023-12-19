@@ -10,6 +10,8 @@
     "USE_TEST_PHONE_NUMBER": "true | false",
     "TEST_PHONE_NUMBER": "",
     "E_GALAXY_URL": "",
-    "MESSAGING_SERVICE_SID": ""
+    "MESSAGING_SERVICE_SID": "",
+    "OPENING_HOUR": "UTC Time e.g 10:00 PST is 18:00 UTC",
+    "CLOSING_HOUR": "UTC Time e.g 17:00 PST is 01:00 UTC"
   }
 }

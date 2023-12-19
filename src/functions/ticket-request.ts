@@ -41,9 +41,9 @@ export async function ticketRequest(request: HttpRequest, context: InvocationCon
     const todayPlus24Hours = new Date(today.getDate() + 1);
 
     // If the event start time is less than 24 hours away, skip the send message step
-    if (new Date(StartDateTime).getTime() > todayPlus24Hours.getTime()) {
-      continue;
-    }
+    // if (new Date(StartDateTime).getTime() > todayPlus24Hours.getTime()) {
+    //   continue;
+    // }
 
     // Remove duplicate contact phonenumbers in an even contact list
     const filteredContacts = events[EventID].contacts.filter(

@@ -12,6 +12,7 @@ import {
   GetEventResponse,
   Contact,
 } from "../types";
+import { add, isWithinInterval, parse } from "date-fns";
 
 export class TicketService {
   private request: HttpRequest;
@@ -95,7 +96,7 @@ export class TicketService {
   };
 
   sendMessage = async (contact: Contact, EventName: string, EventTime: string) => {
-    // Explicity check for non falsy and truthy values
+    // Check if using test phone number
     if (process.env["USE_TEST_PHONE_NUMBER"] === "true") {
       // Send any twilio messages to a test phone number
       return twilioClient.messages.create({
@@ -104,11 +105,35 @@ export class TicketService {
         to: process.env["TEST_PHONE_NUMBER"],
       });
     } else {
-      return twilioClient.messages.create({
-        messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
-        body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
-        to: contact.phoneNumber,
+      const currentTime = new Date();
+      const startTime = parse(process.env["OPENING_HOUR"], "HH:mm", currentTime);
+      const endTime = parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
+      console.log(startTime);
+      console.log(endTime);
+      const isOpen = isWithinInterval(currentTime, {
+        start: startTime,
+        end: endTime,
       });
+      // If within opening hours, send message straight away
+      if (isOpen) {
+        return twilioClient.messages.create({
+          messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
+          body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+          to: contact.phoneNumber,
+        });
+      } else {
+        // If outside opening hours, send message at opening hour + 15 with random offset to spread out message load
+        const offset = 15 + Math.floor(Math.random() * 10);
+        const sendTime = add(parse(process.env["OPENING_HOUR"], "HH:mm", currentTime), { minutes: offset });
+        console.log(sendTime);
+        return twilioClient.messages.create({
+          messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
+          scheduleType: "fixed",
+          sendAt: sendTime,
+          body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+          to: contact.phoneNumber,
+        });
+      }
     }
   };
 }
