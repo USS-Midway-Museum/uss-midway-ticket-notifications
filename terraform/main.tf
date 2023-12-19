@@ -46,7 +46,7 @@ resource "azurerm_service_plan" "asp" {
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   os_type             = "Linux"
-  sku_name            = "Y1"
+  sku_name            = var.plan_sku
   tags                = local.common_tags
 }
 
