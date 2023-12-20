@@ -33,6 +33,7 @@ jobs:
 
       - name: Install and Copy Runtime Dependencies
         run: |
+          yarn --immutable --immutable-cache --mode=skip-build --production
           mkdir TEMP_FUNCTIONS_OUTPUT
           ls -al
           if [[ -d node_modules ]]; then
