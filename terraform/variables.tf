@@ -16,6 +16,10 @@ variable "environment" {
 }
 
 # Outputs
+output "RESOURCE_GROUP_NAME" {
+  value = var.resource_group
+}
+
 output "STORAGE_ACCOUNT_NAME" {
   value = azurerm_storage_account.function_app_storage_account.name
   sensitive =  true
