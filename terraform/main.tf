@@ -8,7 +8,10 @@ terraform {
       source = "hashicorp/random"
       version = "3.5.1"
     }
-  }  
+  }
+  backend "azurerm" {
+    use_oidc = true
+  }
 }
 
 provider "azurerm" {
@@ -49,8 +52,6 @@ resource "azurerm_service_plan" "asp" {
   sku_name            = var.plan_sku
   tags                = local.common_tags
 }
-
-//needs sorting
 
 resource "azurerm_storage_account" "function_app_storage_account" {
   name                     = "stussmtk${var.environment}${local.postfix}"
