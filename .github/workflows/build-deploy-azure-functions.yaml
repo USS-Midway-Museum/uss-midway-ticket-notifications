@@ -34,6 +34,7 @@ jobs:
       - name: Install and Copy Runtime Dependencies
         run: |
           mkdir TEMP_FUNCTIONS_OUTPUT
+          ls -al
           if [[ -d node_modules ]]; then
             cp -r node_modules TEMP_FUNCTIONS_OUTPUT
           fi
