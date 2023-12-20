@@ -114,6 +114,7 @@ jobs:
         id: appsettings
         run: |
           result=$(cat appsettings-definition.json | envsubst)
+          echo "$result"
           echo "$result" > appsettings-definition.json
         env:
           APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).APPLICATIONINSIGHTS_CONNECTION_STRING.value }}
