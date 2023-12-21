@@ -1,7 +1,16 @@
 name: "[BUILD & DEPLOY] Build and Deploy Azure Functions"
-run-name: "BUILD Azure Functions and DEPLOY to Instance [${{ inputs.STACK_NAME }}]"
+run-name: "BUILD Azure Functions and DEPLOY to Instance"
 on:
   workflow_dispatch:
+    inputs:
+      ENVIRONMENT:
+        required: true
+        type: choice
+        description: "Environment"
+        options:
+          - dev
+          - uat
+          - prod
 
 permissions:
   id-token: write
@@ -24,7 +33,9 @@ jobs:
 
       - name: Install and Copy Runtime Dependencies
         run: |
+          yarn --immutable --immutable-cache --mode=skip-build --production
           mkdir TEMP_FUNCTIONS_OUTPUT
+          ls -al
           if [[ -d node_modules ]]; then
             cp -r node_modules TEMP_FUNCTIONS_OUTPUT
           fi
@@ -85,29 +96,39 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ vars.AZ_CLIENT_ID }}
-          tenant-id: ${{ vars.AZ_TENANT_ID }}
-          subscription-id: ${{ vars.AZ_SUBSCRIPTION_ID }}
+          client-id: ${{ vars[format('{0}_AZ_CLIENT_ID', inputs.ENVIRONMENT)] }}
+          tenant-id: ${{ vars[format('{0}_AZ_TENANT_ID', inputs.ENVIRONMENT)] }}
+          subscription-id: ${{ vars[format('{0}_AZ_SUBSCRIPTION_ID', inputs.ENVIRONMENT)] }}
 
       - name: Get Azure Terraform Output
         id: tfAzure
         uses: zingdevlimited/actions-helpers/azure/terraform-output@v3
         with:
-          AZ_CLIENT_ID: ${{ vars.AZ_CLIENT_ID }}
-          AZ_TENANT_ID: ${{ vars.AZ_TENANT_ID }}
-          AZ_SUBSCRIPTION_ID: ${{ vars.AZ_SUBSCRIPTION_ID }}
-          STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars.RESOURCE_GROUP }}
-          STORAGE_ACCOUNT_NAME: ${{ vars.STORAGE_ACCOUNT_NAME }}
-          STORAGE_ACCOUNT_CONTAINER: ${{ vars.STORAGE_ACCOUNT_CONTAINER }}
+          AZ_CLIENT_ID: ${{ vars[format('{0}_AZ_CLIENT_ID', inputs.ENVIRONMENT)] }}
+          AZ_TENANT_ID: ${{ vars[format('{0}_AZ_TENANT_ID', inputs.ENVIRONMENT)] }}
+          AZ_SUBSCRIPTION_ID: ${{ vars[format('{0}_AZ_SUBSCRIPTION_ID', inputs.ENVIRONMENT)] }}
+          STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars[format('{0}_RESOURCE_GROUP', inputs.ENVIRONMENT)] }}
+          STORAGE_ACCOUNT_NAME: ${{ vars[format('{0}_STORAGE_ACCOUNT_NAME', inputs.ENVIRONMENT)] }}
+          STORAGE_ACCOUNT_CONTAINER: ${{ vars[format('{0}_STORAGE_ACCOUNT_CONTAINER', inputs.ENVIRONMENT)] }}
           TERRAFORM_DIRECTORY: ./terraform
 
       - name: Generate AppSettings JSON
         id: appsettings
         run: |
           result=$(cat appsettings-definition.json | envsubst)
+          echo "$result"
           echo "$result" > appsettings-definition.json
         env:
           APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).APPLICATIONINSIGHTS_CONNECTION_STRING.value }}
+          TWILIO_ACCOUNT_SID: ${{ vars[format('{0}_TWILIO_ACCOUNT_SID', inputs.ENVIRONMENT)] }}
+          TWILIO_API_KEY: ${{ vars[format('{0}_TWILIO_API_KEY', inputs.ENVIRONMENT)] }}
+          TWILIO_API_SECRET: ${{ secrets[format('{0}_TWILIO_API_SECRET', inputs.ENVIRONMENT)] }}
+          USE_TEST_PHONE_NUMBER: ${{ vars[format('{0}_USE_TEST_PHONE_NUMBER', inputs.ENVIRONMENT)] }}
+          TEST_PHONE_NUMBER: ${{ vars[format('{0}_TEST_PHONE_NUMBER', inputs.ENVIRONMENT)] }}
+          E_GALAXY_URL: ${{ vars[format('{0}_E_GALAXY_URL', inputs.ENVIRONMENT)] }}
+          MESSAGING_SERVICE_SID: ${{ vars[format('{0}_MESSAGING_SERVICE_SID', inputs.ENVIRONMENT)] }}
+          OPENING_HOUR: ${{ vars[format('{0}_OPENING_HOUR', inputs.ENVIRONMENT)] }}
+          CLOSING_HOUR: ${{ vars[format('{0}_CLOSING_HOUR', inputs.ENVIRONMENT)] }}
           
       - name: Deploy To Azure
         run: |

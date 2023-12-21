@@ -1,6 +1,11 @@
 # Inputs
 
-variable "central_resource_group" {
+variable "plan_sku" {
+  type     = string
+  nullable = false
+}
+
+variable "resource_group" {
   type     = string
   nullable = false
 }
@@ -11,6 +16,10 @@ variable "environment" {
 }
 
 # Outputs
+output "RESOURCE_GROUP_NAME" {
+  value = var.resource_group
+}
+
 output "STORAGE_ACCOUNT_NAME" {
   value = azurerm_storage_account.function_app_storage_account.name
   sensitive =  true

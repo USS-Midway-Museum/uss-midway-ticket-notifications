@@ -8,7 +8,10 @@ terraform {
       source = "hashicorp/random"
       version = "3.5.1"
     }
-  }  
+  }
+  backend "azurerm" {
+    use_oidc = true
+  }
 }
 
 provider "azurerm" {
@@ -24,7 +27,7 @@ provider "azurerm" {
 data "azurerm_client_config" "current" {}
 
 data "azurerm_resource_group" "rg" {
-  name = var.central_resource_group
+  name = var.resource_group
 }
 
 
@@ -42,29 +45,21 @@ locals {
 }
 
 resource "azurerm_service_plan" "asp" {
-  name                = "ASP-uss-midway-ticket-notifications-${var.environment}"
+  name                = "ASP-uss-midway-ticket-notifications-${var.environment}-${local.postfix}"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   os_type             = "Linux"
-  sku_name            = "Y1"
+  sku_name            = var.plan_sku
   tags                = local.common_tags
 }
 
-//needs sorting
-
 resource "azurerm_storage_account" "function_app_storage_account" {
-  name                     = "ussmidwaytk${var.environment}"
+  name                     = "stussmtk${var.environment}${local.postfix}"
   resource_group_name      = data.azurerm_resource_group.rg.name
   location                 = data.azurerm_resource_group.rg.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
   tags                = local.common_tags
-}
-
-resource "azurerm_role_assignment" "tf_table_access" {
-  scope                = azurerm_storage_account.function_app_storage_account.id
-  role_definition_name = "Storage Table Data Contributor"
-  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_log_analytics_workspace" "log-analytics" {
@@ -90,12 +85,29 @@ resource "azurerm_application_insights" "app_insights" {
 
 
 resource "azurerm_linux_function_app" "function_app" {
-  name                = "uss-midway-ticket-notifications-${var.environment}"
+  name                = "uss-midway-ticket-notifications-${var.environment}-${local.postfix}"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   storage_account_name       = azurerm_storage_account.function_app_storage_account.name
   storage_account_access_key = azurerm_storage_account.function_app_storage_account.primary_access_key
   service_plan_id            = azurerm_service_plan.asp.id
+  functions_extension_version = "~4"
+
+  site_config {
+    always_on = true
+    application_insights_connection_string = azurerm_application_insights.app_insights.connection_string
+    application_stack {
+      node_version = 18
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+      app_settings,
+      sticky_settings
+    ]
+  }
+
   tags                = local.common_tags
-  site_config {}
 }

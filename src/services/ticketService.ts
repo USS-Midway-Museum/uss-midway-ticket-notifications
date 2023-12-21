@@ -1,19 +1,21 @@
 import { HttpRequest } from "@azure/functions";
 import { twilioClient } from "./twilioService";
 import { parseString } from "xml2js";
+import { randomUUID } from "crypto";
 import {
   ticketsDataSchema,
   TicketsData,
   TicketData,
   HeaderData,
   EventData,
-  eventDataSchema,
+  eventsDataSchema,
   GetEventResponse,
+  Contact,
 } from "../types";
+import { add, isWithinInterval, parse } from "date-fns";
 
 export class TicketService {
   private request: HttpRequest;
-  private localCache: Record<string, GetEventResponse>;
 
   constructor(request: HttpRequest) {
     this.request = request;
@@ -29,26 +31,22 @@ export class TicketService {
         ticketsDataSchema.parse(result);
         const tickets = result.Envelope.Body.Tickets.Ticket;
         const header = result.Envelope.Header;
-        resolve({ header, tickets });
+        if (Array.isArray(tickets)) {
+          resolve({ header, tickets });
+        } else {
+          resolve({ header, tickets: [tickets] });
+        }
       });
     });
   };
 
-  getEvent = async (data: { sourceID: string; timeStamp: string; eventId: string }): Promise<GetEventResponse> => {
-    const { sourceID, timeStamp, eventId } = data;
-
-    // Check if the event ID exists in this class already
-    const localCacheHit: GetEventResponse | undefined = this.localCache[eventId];
-    if (localCacheHit) {
-      return localCacheHit;
-    }
-
-    // Cache miss, query eGalaxy
+  getEvents = async (data: { sourceID: string; timeStamp: string; events: string[] }): Promise<GetEventResponse[]> => {
+    const { sourceID, timeStamp, events } = data;
 
     const eGalaxyRequest = `<?xml version="1.0"?>
     <Envelope>
       <Header>
-        <MessageID>0</MessageID>
+        <MessageID>${randomUUID()}</MessageID>
         <MessageType>GetEvents</MessageType>
         <SourceID>${sourceID}</SourceID>
         <TimeStamp>${timeStamp}</TimeStamp>
@@ -56,78 +54,88 @@ export class TicketService {
       <Body>
         <GetEvents>
           <EventIDs>
-            <EventID>${eventId}</EventID>
+            ${events.map((id) => "<EventID>" + id + "</EventID>")}
           </EventIDs>
         </GetEvents>
       </Body>
     </Envelope>`;
 
-    const res = await fetch("https://tickets.midway.org/eGalaxy/eGalaxy.ashx", {
+    const res = await fetch(process.env["E_GALAXY_URL"], {
       method: "POST",
       headers: { "content-type": "text/xml" },
       body: eGalaxyRequest,
     });
 
-    // if (!res.ok) {
-    //   throw Error(await res.text());
-    // }
+    if (!res.ok) {
+      throw Error(await res.text());
+    }
 
-    const incomingXMLString = `<?xml version="1.0" encoding="UTF-8"?>
-    <Envelope>
-      <Header>
-        <MessageID>0</MessageID>
-        <MessageType>GetEventsResponse</MessageType>
-        <SourceID>1</SourceID>
-        <TimeStamp>2023-12-06 12:48:48</TimeStamp>
-        <EchoData></EchoData>
-        <SystemFields></SystemFields>
-      </Header>
-      <Body>
-        <Events>
-          <Event>
-            <ResponseCode>0</ResponseCode>
-            <EventID>243</EventID>
-            <StartDateTime>${new Date(new Date().getDate() + 3)}</StartDateTime>
-            <EndDateTime>2017-08-27 15:30:00</EndDateTime>
-            <EventTypeID>1</EventTypeID>
-            <OnSaleDateTime>2017-07-23 10:00:00</OnSaleDateTime>
-            <OffSaleDateTime>2017-08-27 14:50:00</OffSaleDateTime>
-            <ResourceID>1</ResourceID>
-            <UserEventNumber>0</UserEventNumber>
-            <Available>300</Available>
-            <TotalCapacity>300</TotalCapacity>
-            <Status>1</Status>
-            <HasRoster>NO</HasRoster>
-            <RSEventSeatMap>0</RSEventSeatMap>
-            <PrivateEvent>NO</PrivateEvent>
-            <HasHolds>NO</HasHolds>
-            <EventName>Dinosaurs 3-D</EventName>
-          </Event>
-        </Events>
-      </Body>
-    </Envelope>`;
+    const incomingXMLString = await res.text();
 
-    const parsedResponse = await new Promise<GetEventResponse>((resolve, reject) => {
+    const parsedResponse = await new Promise<GetEventResponse[]>((resolve, reject) => {
       parseString(incomingXMLString, { explicitArray: false }, (err: Error, result: EventData) => {
         if (err) {
           reject(err);
         }
-        eventDataSchema.parse(result);
-        const { StartDateTime, EventName } = result.Envelope.Body.Events.Event;
-        resolve({ StartDateTime, EventName });
+        eventsDataSchema.parse(result);
+        if (Array.isArray(result.Envelope.Body.Events.Event)) {
+          const eventResponses = result.Envelope.Body.Events.Event.map((event) => ({
+            StartDateTime: event.StartDateTime,
+            EventName: event.EventName,
+            EventID: event.EventID,
+          }));
+          resolve(eventResponses);
+        } else {
+          const { StartDateTime, EventName, EventID } = result.Envelope.Body.Events.Event;
+          resolve([{ StartDateTime, EventName, EventID }]);
+        }
       });
     });
 
-    // Cache response locally
-    this.localCache[eventId] = parsedResponse;
     return parsedResponse;
   };
 
-  sendMessage = async (phoneNumber: string, EventName: string) => {
-    return twilioClient.messages.create({
-      from: "+447883305646",
-      body: `Thank you for purchasing tickets for ${EventName}. We look forward to seeing you!`,
-      to: phoneNumber,
-    });
+  sendMessage = async (contact: Contact, EventName: string, EventTime: string) => {
+    // Check if using test phone number
+    if (process.env["USE_TEST_PHONE_NUMBER"] === "true") {
+      // Send any twilio messages to a test phone number
+      return twilioClient.messages.create({
+        messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
+        body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+        to: process.env["TEST_PHONE_NUMBER"],
+      });
+    } else {
+      const currentTime = new Date();
+      const startTime = parse(process.env["OPENING_HOUR"], "HH:mm", currentTime);
+      const endTime = parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
+      const isOpen = isWithinInterval(currentTime, {
+        start: startTime,
+        end: endTime,
+      });
+      // If within opening hours, send message straight away
+      if (isOpen) {
+        return twilioClient.messages.create({
+          messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
+          body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+          to: contact.phoneNumber,
+        });
+      } else {
+        // If outside opening hours, send message at opening hour + 15 with random offset to spread out message load
+        const offset = 15 + Math.floor(Math.random() * 10);
+        // if past closing hour, add 24hours to the sendTime
+        const add24hrs = currentTime > parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
+        let sendTime = add(parse(process.env["OPENING_HOUR"], "HH:mm", currentTime), { minutes: offset });
+        if (add24hrs) {
+          sendTime = add(sendTime, { days: 1 });
+        }
+        return twilioClient.messages.create({
+          messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
+          scheduleType: "fixed",
+          sendAt: sendTime,
+          body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+          to: contact.phoneNumber,
+        });
+      }
+    }
   };
 }
