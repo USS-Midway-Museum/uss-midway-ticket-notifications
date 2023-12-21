@@ -4,8 +4,8 @@
 
 Duplicate `local.settings.example.json` and rename to `local.settings.json` and populate the variables with the corresponding values from the table below.
 
-| Variable | Value | Is secret
-|---|---|
+| Variable | Value | Is secret |
+|---|---|---|
 | DEV_TWILIO_ACCOUNT_SID | Get from the [console](https://console.twilio.com/) | No | 
 | DEV_TWILIO_API_KEY | Get from the [console](https://console.twilio.com/) in Account > API keys & tokens > Create API key| No |
 | DEV_TWILIO_API_SECRET | Get from the api key creation stage | Yes |
