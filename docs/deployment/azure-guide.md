@@ -69,7 +69,7 @@ Please set up all of the following role assignments:
 
 ### Required Variables/Secrets
 
-Please ensure you prefix each variable with the targeted environment. One of `develop`, `uat` or `production`.  
+Please ensure you prefix each variable with the targeted environment. One of `dev`, `uat` or `production`.  
 Please set up all of the following variables/secrets:
 
 | Variable | Value |
