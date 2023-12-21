@@ -91,7 +91,7 @@ Please set up all of the following variables/secrets:
 | DEV_MESSAGING_SERVICE_SID | Get from the [console](https://console.twilio.com/) in **Messaging** |
 | DEV_OPENING_HOUR | Handle the conversion from PST to UTC manually, then use the UTC Hour |
 | DEV_CLOSING_HOUR | Handle the conversion from PST to UTC manually, then use the UTC Hour | 
-| DEV_PLAN_SKU | 
+| DEV_PLAN_SKU | Azure app service plan code, e.g B1, S1, P0v3 |
 
 ## Triggering Deployment
 
