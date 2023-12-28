@@ -45,7 +45,7 @@ locals {
 }
 
 resource "azurerm_service_plan" "asp" {
-  name                = "ASP-uss-midway-ticket-notifications-${var.environment}-${local.postfix}"
+  name                = "ASP-uss-m-zing-${var.environment}-${local.postfix}"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   os_type             = "Linux"
@@ -75,17 +75,17 @@ resource "azurerm_log_analytics_workspace" "log-analytics" {
 //dynamic plan
 
 resource "azurerm_application_insights" "app_insights" {
-  name                = "uss-midway-ticket-notifications-insights-${local.postfix}"
+  name                = "ai-uss-m-tk-notif-${local.postfix}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
   workspace_id        = azurerm_log_analytics_workspace.log-analytics.id
-  application_type    = "web"
+  application_type    = "Node.JS"
   tags                = local.common_tags
 }
 
 
 resource "azurerm_linux_function_app" "function_app" {
-  name                = "uss-midway-ticket-notifications-${var.environment}-${local.postfix}"
+  name                = "uss-m-tk-notif-${var.environment}-${local.postfix}"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   storage_account_name       = azurerm_storage_account.function_app_storage_account.name
