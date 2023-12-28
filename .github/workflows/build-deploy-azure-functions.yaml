@@ -123,7 +123,7 @@ jobs:
           APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).APPLICATIONINSIGHTS_CONNECTION_STRING.value }}
           TWILIO_ACCOUNT_SID: ${{ vars[format('{0}_TWILIO_ACCOUNT_SID', inputs.ENVIRONMENT)] }}
           TWILIO_API_KEY: ${{ vars[format('{0}_TWILIO_API_KEY', inputs.ENVIRONMENT)] }}
-          TWILIO_API_SECRET: ${{ format('@Microsoft.KeyVault(VaultName={0};SecretName=twilio-api-secret]', fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).KEYVAULT_NAME.value)}}
+          VAULT_NAME: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).KEYVAULT_NAME.value }}
           USE_TEST_PHONE_NUMBER: ${{ vars[format('{0}_USE_TEST_PHONE_NUMBER', inputs.ENVIRONMENT)] }}
           TEST_PHONE_NUMBER: ${{ vars[format('{0}_TEST_PHONE_NUMBER', inputs.ENVIRONMENT)] }}
           E_GALAXY_URL: ${{ vars[format('{0}_E_GALAXY_URL', inputs.ENVIRONMENT)] }}
