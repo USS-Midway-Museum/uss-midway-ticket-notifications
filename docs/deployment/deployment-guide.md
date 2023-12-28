@@ -1,4 +1,4 @@
-# Azure Deployment
+# Deployment Guide
 
 ## Azure Pre-Setup
 
@@ -72,26 +72,26 @@ Please set up all of the following role assignments:
 Please ensure you prefix each variable with the targeted environment. One of `dev`, `uat` or `prod`.  
 Please set up all of the following variables/secrets:
 
-| Variable | Value |
-|---|---|
-| DEV_AZ_TENANT_ID | The Microsoft Entra ID(formerly Azure Active Directory) [Tenant ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id) | No |
-| DEV_AZ_CLIENT_ID | The Client ID of the [Managed Identity](#user-assigned-managed-identity) you created. Found by navigating into the Managed Identity resource under the `Overview` tab | No |
-| DEV_AZ_SUBSCRIPTION_ID | The Azure [Subscription ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id) used to host the resources | No |
-| DEV_STORAGE_ACCOUNT_RESOURCEGROUP | The name of the **Resource Group** containing the [Terraform State Storage Account](#terraform-state-storage-account) | No |
-| DEV_STORAGE_ACCOUNT_NAME | The name of the [Terraform State Storage Account](#terraform-state-storage-account) | No |
-| DEV_STORAGE_ACCOUNT_CONTAINER | The name of the Container that you created under the [Terraform State Storage Account](#terraform-state-storage-account) | No |
-| DEV_RESOURCE_GROUP | The name of the [Deployment Resource Group](#deployment-resource-group) | No |
-| DEV_TWILIO_ACCOUNT_SID | Get from the [console](https://console.twilio.com/) |
-| DEV_TWILIO_API_KEY | Get from the [console](https://console.twilio.com/) in Account > API keys & tokens > Create API key|
-| DEV_TWILIO_API_SECRET | Get from the api key creation stage |
-| DEV_USE_TEST_PHONE_NUMBER | true to use the test phone number, false to not use the test phone number |
-| DEV_TEST_PHONE_NUMBER | Any valid E.164 phone number |
-| DEV_RUN_FROM_PACKAGE | Set to 1 to run from `/home/data/SitePackages` instead of `/home/site/wwwroot` |
-| DEV_E_GALAXY_URL | URL/IP address for querying egalaxy on event ids |
-| DEV_MESSAGING_SERVICE_SID | Get from the [console](https://console.twilio.com/) in **Messaging** |
-| DEV_OPENING_HOUR | Handle the conversion from PST to UTC manually, then use the UTC Hour |
-| DEV_CLOSING_HOUR | Handle the conversion from PST to UTC manually, then use the UTC Hour | 
-| DEV_PLAN_SKU | Azure app service plan code, e.g B1, S1, P0v3 |
+| Variable                          | Value                                                                                                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DEV_AZ_TENANT_ID                  | The Microsoft Entra ID(formerly Azure Active Directory) [Tenant ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id)                  | No |
+| DEV_AZ_CLIENT_ID                  | The Client ID of the [Managed Identity](#user-assigned-managed-identity) you created. Found by navigating into the Managed Identity resource under the `Overview` tab | No |
+| DEV_AZ_SUBSCRIPTION_ID            | The Azure [Subscription ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id) used to host the resources                               | No |
+| DEV_STORAGE_ACCOUNT_RESOURCEGROUP | The name of the **Resource Group** containing the [Terraform State Storage Account](#terraform-state-storage-account)                                                 | No |
+| DEV_STORAGE_ACCOUNT_NAME          | The name of the [Terraform State Storage Account](#terraform-state-storage-account)                                                                                   | No |
+| DEV_STORAGE_ACCOUNT_CONTAINER     | The name of the Container that you created under the [Terraform State Storage Account](#terraform-state-storage-account)                                              | No |
+| DEV_RESOURCE_GROUP                | The name of the [Deployment Resource Group](#deployment-resource-group)                                                                                               | No |
+| DEV_TWILIO_ACCOUNT_SID            | Get from the [console](https://console.twilio.com/)                                                                                                                   |
+| DEV_TWILIO_API_KEY                | Get from the [console](https://console.twilio.com/) in Account > API keys & tokens > Create API key                                                                   |
+| DEV_TWILIO_API_SECRET             | Get from the api key creation stage                                                                                                                                   |
+| DEV_USE_TEST_PHONE_NUMBER         | true to use the test phone number, false to not use the test phone number                                                                                             |
+| DEV_TEST_PHONE_NUMBER             | Any valid E.164 phone number                                                                                                                                          |
+| DEV_RUN_FROM_PACKAGE              | Set to 1 to run from `/home/data/SitePackages` instead of `/home/site/wwwroot`                                                                                        |
+| DEV_E_GALAXY_URL                  | URL/IP address for querying egalaxy on event ids                                                                                                                      |
+| DEV_MESSAGING_SERVICE_SID         | Get from the [console](https://console.twilio.com/) in **Messaging**                                                                                                  |
+| DEV_OPENING_HOUR                  | Handle the conversion from PST to UTC manually, then use the UTC Hour                                                                                                 |
+| DEV_CLOSING_HOUR                  | Handle the conversion from PST to UTC manually, then use the UTC Hour                                                                                                 |
+| DEV_PLAN_SKU                      | Azure app service plan code, e.g B1, S1, P0v3                                                                                                                         |
 
 ## Triggering Deployment
 
