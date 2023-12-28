@@ -85,7 +85,7 @@ resource "azurerm_role_assignment" "keyvault_access" {
 # App Service Plan and Storage
 
 resource "azurerm_service_plan" "asp" {
-  name                = "ASP-uss-m-zing-${var.environment}-${local.postfix}"
+  name                = "ASP-${local.solution_short_name}-${var.environment}-${local.postfix}"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   os_type             = "Linux"
@@ -94,7 +94,7 @@ resource "azurerm_service_plan" "asp" {
 }
 
 resource "azurerm_storage_account" "function_app_storage_account" {
-  name                     = "stussmtk${var.environment}${local.postfix}"
+  name                     = "st${local.solution_short_name}${var.environment}${local.postfix}"
   resource_group_name      = data.azurerm_resource_group.rg.name
   location                 = data.azurerm_resource_group.rg.location
   account_tier             = "Standard"
@@ -114,7 +114,7 @@ resource "azurerm_log_analytics_workspace" "log-analytics" {
 }
 
 resource "azurerm_application_insights" "app_insights" {
-  name                = "ai-uss-m-tk-notif-${local.postfix}"
+  name                = "ai-${local.solution_short_name}-${local.postfix}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
   workspace_id        = azurerm_log_analytics_workspace.log-analytics.id
@@ -125,7 +125,7 @@ resource "azurerm_application_insights" "app_insights" {
 # Function App
 
 resource "azurerm_linux_function_app" "function_app" {
-  name                        = "uss-m-tk-notif-${var.environment}-${local.postfix}"
+  name                        = "${local.solution_short_name}-${var.environment}-${local.postfix}"
   resource_group_name         = data.azurerm_resource_group.rg.name
   location                    = data.azurerm_resource_group.rg.location
   storage_account_name        = azurerm_storage_account.function_app_storage_account.name
