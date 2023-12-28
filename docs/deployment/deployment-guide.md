@@ -15,7 +15,7 @@ You can use a Storage Account in a separate resource group.
 
 Under this Storage Account you will also need to create a **Storage Container** which will store the Terraform state files.
 
-Convention for this naming is azure-$ENVIRONMENT_NAME.tfstate i.e (azure-dev.tfstate)
+While the name for this container can be set to anything, we'd recommend naming it `azure-tfstates` without a specific environment postfix, as this can then be used for multiple Terraform deployments.
 
 ### User Assigned Managed Identity
 
