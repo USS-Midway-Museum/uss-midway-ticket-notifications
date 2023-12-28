@@ -110,6 +110,7 @@ jobs:
           STORAGE_ACCOUNT_RESOURCEGROUP: ${{ vars[format('{0}_RESOURCE_GROUP', inputs.ENVIRONMENT)] }}
           STORAGE_ACCOUNT_NAME: ${{ vars[format('{0}_STORAGE_ACCOUNT_NAME', inputs.ENVIRONMENT)] }}
           STORAGE_ACCOUNT_CONTAINER: ${{ vars[format('{0}_STORAGE_ACCOUNT_CONTAINER', inputs.ENVIRONMENT)] }}
+          STORAGE_BLOB_NAME: ${{ format('ussmtk-{0}.tfstate', inputs.ENVIRONMENT) }}
           TERRAFORM_DIRECTORY: ./terraform
 
       - name: Generate AppSettings JSON
