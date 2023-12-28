@@ -76,6 +76,16 @@ resource "azurerm_key_vault_secret" "twilio-api-secret" {
   ]
 }
 
+resource "azurerm_key_vault_secret" "storage-account-connection-string" {
+  key_vault_id = azurerm_key_vault.main.id
+  name         = "storage-account-connection-string"
+  value        = azurerm_storage_account.function_app_storage_account.primary_connection_string
+
+  depends_on = [
+    azurerm_role_assignment.tf_kv_access
+  ]
+}
+
 resource "azurerm_role_assignment" "keyvault_access" {
   scope                 = azurerm_key_vault.main.id
   role_definition_name  = "Key Vault Secrets User"
@@ -85,7 +95,7 @@ resource "azurerm_role_assignment" "keyvault_access" {
 # App Service Plan and Storage
 
 resource "azurerm_service_plan" "asp" {
-  name                = "ASP-${local.solution_short_name}-${var.environment}-${local.postfix}"
+  name                = "ASP-${local.solution_short_name}-${local.postfix}"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   os_type             = "Linux"
@@ -94,7 +104,7 @@ resource "azurerm_service_plan" "asp" {
 }
 
 resource "azurerm_storage_account" "function_app_storage_account" {
-  name                     = "st${local.solution_short_name}${var.environment}${local.postfix}"
+  name                     = "st${local.solution_short_name}${local.postfix}"
   resource_group_name      = data.azurerm_resource_group.rg.name
   location                 = data.azurerm_resource_group.rg.location
   account_tier             = "Standard"
@@ -125,11 +135,10 @@ resource "azurerm_application_insights" "app_insights" {
 # Function App
 
 resource "azurerm_linux_function_app" "function_app" {
-  name                        = "${local.solution_short_name}-${var.environment}-${local.postfix}"
+  name                        = "${local.solution_short_name}-${local.postfix}"
   resource_group_name         = data.azurerm_resource_group.rg.name
   location                    = data.azurerm_resource_group.rg.location
-  storage_account_name        = azurerm_storage_account.function_app_storage_account.name
-  storage_account_access_key  = azurerm_storage_account.function_app_storage_account.primary_access_key
+  storage_key_vault_secret_id = azurerm_key_vault_secret.storage-account-connection-string.id
   service_plan_id             = azurerm_service_plan.asp.id
   functions_extension_version = "~4"
 
