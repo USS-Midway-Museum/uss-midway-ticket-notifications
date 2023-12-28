@@ -72,26 +72,33 @@ Please set up all of the following role assignments:
 Please ensure you prefix each variable with the targeted environment. One of `dev`, `uat` or `prod`.  
 Please set up all of the following variables/secrets:
 
-| Variable                          | Value                                                                                                                                                                 |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DEV_AZ_TENANT_ID                  | The Microsoft Entra ID(formerly Azure Active Directory) [Tenant ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id)                  | No |
-| DEV_AZ_CLIENT_ID                  | The Client ID of the [Managed Identity](#user-assigned-managed-identity) you created. Found by navigating into the Managed Identity resource under the `Overview` tab | No |
-| DEV_AZ_SUBSCRIPTION_ID            | The Azure [Subscription ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id) used to host the resources                               | No |
-| DEV_STORAGE_ACCOUNT_RESOURCEGROUP | The name of the **Resource Group** containing the [Terraform State Storage Account](#terraform-state-storage-account)                                                 | No |
-| DEV_STORAGE_ACCOUNT_NAME          | The name of the [Terraform State Storage Account](#terraform-state-storage-account)                                                                                   | No |
-| DEV_STORAGE_ACCOUNT_CONTAINER     | The name of the Container that you created under the [Terraform State Storage Account](#terraform-state-storage-account)                                              | No |
-| DEV_RESOURCE_GROUP                | The name of the [Deployment Resource Group](#deployment-resource-group)                                                                                               | No |
-| DEV_TWILIO_ACCOUNT_SID            | Get from the [console](https://console.twilio.com/)                                                                                                                   |
-| DEV_TWILIO_API_KEY                | Get from the [console](https://console.twilio.com/) in Account > API keys & tokens > Create API key                                                                   |
-| DEV_TWILIO_API_SECRET             | Get from the api key creation stage                                                                                                                                   |
-| DEV_USE_TEST_PHONE_NUMBER         | true to use the test phone number, false to not use the test phone number                                                                                             |
-| DEV_TEST_PHONE_NUMBER             | Any valid E.164 phone number                                                                                                                                          |
-| DEV_RUN_FROM_PACKAGE              | Set to 1 to run from `/home/data/SitePackages` instead of `/home/site/wwwroot`                                                                                        |
-| DEV_E_GALAXY_URL                  | URL/IP address for querying egalaxy on event ids                                                                                                                      |
-| DEV_MESSAGING_SERVICE_SID         | Get from the [console](https://console.twilio.com/) in **Messaging**                                                                                                  |
-| DEV_OPENING_HOUR                  | Handle the conversion from PST to UTC manually, then use the UTC Hour                                                                                                 |
-| DEV_CLOSING_HOUR                  | Handle the conversion from PST to UTC manually, then use the UTC Hour                                                                                                 |
-| DEV_PLAN_SKU                      | Azure app service plan code, e.g B1, S1, P0v3                                                                                                                         |
+| Variable                          | Is Secret | Value                                                                                                                                                                                                                                |
+| --------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DEV_AZ_TENANT_ID                  | No        | The Microsoft Entra ID (formerly Azure Active Directory) [Tenant ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id)                                                                                |
+| DEV_AZ_CLIENT_ID                  | No        | The Client ID of the [Managed Identity](#user-assigned-managed-identity) you created. Found by navigating into the Managed Identity resource under the `Overview` tab                                                                |
+| DEV_AZ_SUBSCRIPTION_ID            | No        | The Azure [Subscription ID](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id) used to host the resources                                                                                              |
+| DEV_STORAGE_ACCOUNT_RESOURCEGROUP | No        | The name of the **Resource Group** containing the [Terraform State Storage Account](#terraform-state-storage-account)                                                                                                                |
+| DEV_STORAGE_ACCOUNT_NAME          | No        | The name of the [Terraform State Storage Account](#terraform-state-storage-account)                                                                                                                                                  |
+| DEV_STORAGE_ACCOUNT_CONTAINER     | No        | The name of the Container that you created under the [Terraform State Storage Account](#terraform-state-storage-account)                                                                                                             |
+| DEV_RESOURCE_GROUP                | No        | The name of the [Deployment Resource Group](#deployment-resource-group)                                                                                                                                                              |
+| DEV_TWILIO_ACCOUNT_SID            | No        | Found on the main dashboard of the [Twilio console](https://console.twilio.com/)                                                                                                                                                     |
+| DEV_TWILIO_API_KEY                | No        | Created from the [Twilio console](https://console.twilio.com/) in Account > API keys & tokens > Create API key                                                                                                                       |
+| DEV_TWILIO_API_SECRET             | **Yes**   | Created from the [Twilio console](https://console.twilio.com/) in Account > API keys & tokens > Create API key                                                                                                                       |
+| DEV_E_GALAXY_URL                  | No        | URL/IP address for querying the eGalaxy service to find events. The URL should be the complete path to the API endpoint.                                                                                                             |
+| DEV_MESSAGING_SERVICE_SID         | No        | Find this from the [Twilio console](https://console.twilio.com/us1/develop/sms/services) in **Messaging**. The ID starts with `MG`. You may need to create a service if you don't have one already.                                  |
+| DEV_OPENING_HOUR                  | No        | The standard opening hour for the service. We'll schedule messages so they do not send outside of these hours. **The time must be for UTC**. To set a 9AM PST opening, you'd enter `17:00`.                                          |
+| DEV_CLOSING_HOUR                  | No        | The standard closing hour for the service. We'll schedule messages so they do not send outside of these hours. **The time must be for UTC**. To set a 5PM PST closing, you'd enter `01:00`.                                          |
+| DEV_PLAN_SKU                      | No        | The app service plan SKU code to use. We'd recommend using `P0V3` to start for production use cases. A list of pricing plans can be found here: [ASP Pricing](https://azure.microsoft.com/en-gb/pricing/details/app-service/linux/). |
+
+### Optional Testing Configuration
+
+The following variables can be configured in the same way as the required items, but are only utilized to enable a testing mode for the solution.  
+These can be ignored if you do not need to run the system in test mode, but will be useful for testing in UAT.
+
+| Variable                  | Is Secret | Value                                                                                                                                                                |
+| ------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DEV_USE_TEST_PHONE_NUMBER | No        | Set this to true to use the test phone number. This will replace all customer phone numbers with the configured test number if set. Useful for testing in Dev / UAT. |
+| DEV_TEST_PHONE_NUMBER     | No        | Any valid E.164 phone number to send the messages too.                                                                                                               |
 
 ## Triggering Deployment
 
