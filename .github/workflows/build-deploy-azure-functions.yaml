@@ -8,9 +8,9 @@ on:
         type: choice
         description: "Environment"
         options:
-          - dev
+          - develop
           - uat
-          - prod
+          - production
 
 permissions:
   id-token: write
