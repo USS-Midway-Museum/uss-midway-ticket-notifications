@@ -4,8 +4,8 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "3.77.0"
     }
-     random = {
-      source = "hashicorp/random"
+    random = {
+      source  = "hashicorp/random"
       version = "3.5.1"
     }
   }
@@ -30,19 +30,59 @@ data "azurerm_resource_group" "rg" {
   name = var.resource_group
 }
 
-
 resource "random_id" "resource_postfix" {
   byte_length = 4
 }
 
 locals {
-  postfix = "${random_id.resource_postfix.hex}"
+  postfix = random_id.resource_postfix.hex
   common_tags = {
-    source = "terraform"
-    postfix = "${random_id.resource_postfix.hex}"
+    source             = "terraform"
+    postfix            = "${random_id.resource_postfix.hex}"
     instanceIdentifier = "${var.environment}"
   }
+  solution_short_name = "ussmtk"
 }
+
+# Key Vault Configuration
+resource "azurerm_key_vault" "main" {
+  name                      = "kv-${local.solution_short_name}-${local.postfix}"
+  resource_group_name       = data.azurerm_resource_group.rg.name
+  location                  = data.azurerm_resource_group.rg.location
+  tenant_id                 = data.azurerm_client_config.current.tenant_id
+
+  enable_rbac_authorization = true
+  sku_name                  = "standard"
+  tags                      = local.common_tags
+
+  lifecycle {
+    ignore_changes          = [tags]
+  }
+}
+
+resource "azurerm_role_assignment" "tf_kv_access" {
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+resource "azurerm_key_vault_secret" "twilio-api-secret" {
+  key_vault_id = azurerm_key_vault.main.id
+  name         = "twilio-api-secret"
+  value        = var.twilio_api_secret
+
+  depends_on = [
+    azurerm_role_assignment.tf_kv_access
+  ]
+}
+
+resource "azurerm_role_assignment" "keyvault_access" {
+  scope                 = azurerm_key_vault.main.id
+  role_definition_name  = "Key Vault Secrets User"
+  principal_id          = azurerm_linux_function_app.function_app.identity.0.principal_id
+}
+
+# App Service Plan and Storage
 
 resource "azurerm_service_plan" "asp" {
   name                = "ASP-uss-m-zing-${var.environment}-${local.postfix}"
@@ -59,8 +99,10 @@ resource "azurerm_storage_account" "function_app_storage_account" {
   location                 = data.azurerm_resource_group.rg.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
-  tags                = local.common_tags
+  tags                     = local.common_tags
 }
+
+# Analytics Workspace and Insights
 
 resource "azurerm_log_analytics_workspace" "log-analytics" {
   name                = "workspace-${local.postfix}"
@@ -71,9 +113,6 @@ resource "azurerm_log_analytics_workspace" "log-analytics" {
   tags                = local.common_tags
 }
 
-//create workspace
-//dynamic plan
-
 resource "azurerm_application_insights" "app_insights" {
   name                = "ai-uss-m-tk-notif-${local.postfix}"
   location            = data.azurerm_resource_group.rg.location
@@ -83,18 +122,23 @@ resource "azurerm_application_insights" "app_insights" {
   tags                = local.common_tags
 }
 
+# Function App
 
 resource "azurerm_linux_function_app" "function_app" {
-  name                = "uss-m-tk-notif-${var.environment}-${local.postfix}"
-  resource_group_name = data.azurerm_resource_group.rg.name
-  location            = data.azurerm_resource_group.rg.location
-  storage_account_name       = azurerm_storage_account.function_app_storage_account.name
-  storage_account_access_key = azurerm_storage_account.function_app_storage_account.primary_access_key
-  service_plan_id            = azurerm_service_plan.asp.id
+  name                        = "uss-m-tk-notif-${var.environment}-${local.postfix}"
+  resource_group_name         = data.azurerm_resource_group.rg.name
+  location                    = data.azurerm_resource_group.rg.location
+  storage_account_name        = azurerm_storage_account.function_app_storage_account.name
+  storage_account_access_key  = azurerm_storage_account.function_app_storage_account.primary_access_key
+  service_plan_id             = azurerm_service_plan.asp.id
   functions_extension_version = "~4"
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   site_config {
-    always_on = true
+    always_on                              = true
     application_insights_connection_string = azurerm_application_insights.app_insights.connection_string
     application_stack {
       node_version = 18
@@ -109,5 +153,5 @@ resource "azurerm_linux_function_app" "function_app" {
     ]
   }
 
-  tags                = local.common_tags
+  tags = local.common_tags
 }
