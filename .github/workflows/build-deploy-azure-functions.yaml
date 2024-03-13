@@ -120,7 +120,6 @@ jobs:
           echo "$result"
           echo "$result" > appsettings-definition.json
         env:
-          APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).APPLICATIONINSIGHTS_CONNECTION_STRING.value }}
           TWILIO_ACCOUNT_SID: ${{ vars[format('{0}_TWILIO_ACCOUNT_SID', inputs.ENVIRONMENT)] }}
           TWILIO_API_KEY: ${{ vars[format('{0}_TWILIO_API_KEY', inputs.ENVIRONMENT)] }}
           VAULT_NAME: ${{ fromJSON(steps.tfAzure.outputs.TERRAFORM_OUTPUTS).KEYVAULT_NAME.value }}
