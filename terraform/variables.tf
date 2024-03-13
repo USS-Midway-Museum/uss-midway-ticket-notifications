@@ -39,10 +39,6 @@ output "APPINSIGHTS_INSTRUMENTATIONKEY" {
   value       = azurerm_application_insights.app_insights.instrumentation_key
   sensitive   = true
 }
-output "APPLICATIONINSIGHTS_CONNECTION_STRING" {
-  value       = azurerm_application_insights.app_insights.connection_string
-  sensitive   = true
-}
 
 output "AZURE_FUNCTIONS_NAME" {
   value       = azurerm_linux_function_app.function_app.name
