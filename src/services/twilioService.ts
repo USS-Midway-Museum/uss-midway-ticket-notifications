@@ -1,4 +1,19 @@
 import { Twilio } from "twilio";
-export const twilioClient = new Twilio(process.env["TWILIO_API_KEY"], process.env["TWILIO_API_SECRET"], {
-  accountSid: process.env["TWILIO_ACCOUNT_SID"],
-});
+
+let _twilioClient: Twilio;
+
+export const twilioClient = () => {
+  if (_twilioClient) {
+    return _twilioClient;
+  }
+
+  const apiKey = process.env["TWILIO_API_KEY"];
+  const apiSecret = process.env["TWILIO_API_SECRET"];
+  const accountSid = process.env["TWILIO_ACCOUNT_SID"];
+
+  _twilioClient = new Twilio(apiKey, apiSecret, {
+    accountSid,
+  });
+
+  return _twilioClient;
+};

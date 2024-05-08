@@ -1,4 +1,4 @@
-import { HttpRequest } from "@azure/functions";
+import { HttpRequest, InvocationContext } from "@azure/functions";
 import { twilioClient } from "./twilioService";
 import { parseString } from "xml2js";
 import { randomUUID } from "crypto";
@@ -16,9 +16,11 @@ import { add, isWithinInterval, parse } from "date-fns";
 
 export class TicketService {
   private request: HttpRequest;
+  private context: InvocationContext;
 
-  constructor(request: HttpRequest) {
+  constructor(request: HttpRequest, context: InvocationContext) {
     this.request = request;
+    this.context = context;
   }
 
   parseIncoming = async () => {
@@ -96,15 +98,24 @@ export class TicketService {
   };
 
   sendMessage = async (contact: Contact, EventName: string, EventTime: string) => {
+    this.context.info("Sending message");
     // Check if using test phone number
     if (process.env["USE_TEST_PHONE_NUMBER"] === "true") {
+      const messageBody = `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`;
+
+      this.context.info("Test mode is enabled, skipping scheduling checks");
+      this.context.info(
+        `Sending message to ${process.env["TEST_PHONE_NUMBER"]} using service ${process.env["MESSAGING_SERVICE_SID"]}`
+      );
+      this.context.info(`Message contents: '${messageBody}'`);
       // Send any twilio messages to a test phone number
-      return twilioClient.messages.create({
+      return twilioClient().messages.create({
         messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
-        body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+        body: messageBody,
         to: process.env["TEST_PHONE_NUMBER"],
       });
     } else {
+      this.context.info("Running scheduling checks");
       const currentTime = new Date();
       const startTime = parse(process.env["OPENING_HOUR"], "HH:mm", currentTime);
       const endTime = parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
@@ -112,14 +123,24 @@ export class TicketService {
         start: startTime,
         end: endTime,
       });
+
+      this.context.log({
+        startTime,
+        endTime,
+        currentTime,
+        isOpen,
+      });
+
       // If within opening hours, send message straight away
       if (isOpen) {
-        return twilioClient.messages.create({
+        this.context.info("Within opening hours. Sending message immediately.");
+        return twilioClient().messages.create({
           messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
           body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
           to: contact.phoneNumber,
         });
       } else {
+        this.context.info("Outside opening hours. Calculating best send time");
         // If outside opening hours, send message at opening hour + 15 with random offset to spread out message load
         const offset = 15 + Math.floor(Math.random() * 10);
         // if past closing hour, add 24hours to the sendTime
@@ -128,7 +149,12 @@ export class TicketService {
         if (add24hrs) {
           sendTime = add(sendTime, { days: 1 });
         }
-        return twilioClient.messages.create({
+
+        this.context.info({
+          sendTime,
+        });
+
+        return twilioClient().messages.create({
           messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
           scheduleType: "fixed",
           sendAt: sendTime,
