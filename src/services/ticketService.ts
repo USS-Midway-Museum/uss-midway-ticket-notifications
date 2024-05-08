@@ -12,7 +12,7 @@ import {
   GetEventResponse,
   Contact,
 } from "../types";
-import { add, isWithinInterval, parse } from "date-fns";
+import { add, isWithinInterval, parse, format } from "date-fns";
 
 export class TicketService {
   private request: HttpRequest;
@@ -97,12 +97,21 @@ export class TicketService {
     return parsedResponse;
   };
 
+  getMessage = (contact: Contact, eventName: string, eventTime: string) => {
+    const eventDate = new Date(eventTime);
+    const formattedEventDate = format(eventDate, "MMM do, yyyy");
+    const formattedEventTime = format(eventDate, "HH:mm");
+
+    const messageBody = `Thank you for purchasing your ticket to visit the USS Midway.\nYour booking is for ${formattedEventDate} with entry from ${formattedEventTime}.\nIf you have any questions about the event or your visit, please reply to this message to speak with our team.`
+    return messageBody;
+  }
+
   sendMessage = async (contact: Contact, EventName: string, EventTime: string) => {
     this.context.info("Sending message");
+    const messageBody = this.getMessage(contact, EventName, EventTime);
+
     // Check if using test phone number
     if (process.env["USE_TEST_PHONE_NUMBER"] === "true") {
-      const messageBody = `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`;
-
       this.context.info("Test mode is enabled, skipping scheduling checks");
       this.context.info(
         `Sending message to ${process.env["TEST_PHONE_NUMBER"]} using service ${process.env["MESSAGING_SERVICE_SID"]}`
@@ -136,7 +145,7 @@ export class TicketService {
         this.context.info("Within opening hours. Sending message immediately.");
         return twilioClient().messages.create({
           messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
-          body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+          body: messageBody,
           to: contact.phoneNumber,
         });
       } else {
@@ -158,7 +167,7 @@ export class TicketService {
           messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
           scheduleType: "fixed",
           sendAt: sendTime,
-          body: `Hi ${contact.firstName} ${contact.lastName}. This is confirmation of your booking for ${EventName} at ${EventTime}.`,
+          body: messageBody,
           to: contact.phoneNumber,
         });
       }
