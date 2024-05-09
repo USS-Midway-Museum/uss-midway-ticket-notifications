@@ -102,9 +102,9 @@ export class TicketService {
     const formattedEventDate = format(eventDate, "MMM do, yyyy");
     const formattedEventTime = format(eventDate, "HH:mm");
 
-    const messageBody = `Thank you for purchasing your ticket to visit the USS Midway.\nYour booking is for ${formattedEventDate} with entry from ${formattedEventTime}.\nIf you have any questions about the event or your visit, please reply to this message to speak with our team.`
+    const messageBody = `Thank you for purchasing your ticket to visit the USS Midway.\nYour booking is for ${formattedEventDate} with entry from ${formattedEventTime}.\nIf you have any questions about the event or your visit, please reply to this message to speak with our team.`;
     return messageBody;
-  }
+  };
 
   sendMessage = async (contact: Contact, EventName: string, EventTime: string) => {
     this.context.info("Sending message");
@@ -112,7 +112,7 @@ export class TicketService {
 
     // Check if using test phone number
     if (process.env["USE_TEST_PHONE_NUMBER"] === "true") {
-      this.context.info("Test mode is enabled, skipping scheduling checks");
+      this.context.info("Test mode is enabled, skipping send");
       this.context.info(
         `Sending message to ${process.env["TEST_PHONE_NUMBER"]} using service ${process.env["MESSAGING_SERVICE_SID"]}`
       );
@@ -123,54 +123,52 @@ export class TicketService {
         body: messageBody,
         to: process.env["TEST_PHONE_NUMBER"],
       });
-    } else {
-      this.context.info("Running scheduling checks");
-      const currentTime = new Date();
-      const startTime = parse(process.env["OPENING_HOUR"], "HH:mm", currentTime);
-      const endTime = parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
-      const isOpen = isWithinInterval(currentTime, {
-        start: startTime,
-        end: endTime,
-      });
-
-      this.context.log({
-        startTime,
-        endTime,
-        currentTime,
-        isOpen,
-      });
-
-      // If within opening hours, send message straight away
-      if (isOpen) {
-        this.context.info("Within opening hours. Sending message immediately.");
-        return twilioClient().messages.create({
-          messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
-          body: messageBody,
-          to: contact.phoneNumber,
-        });
-      } else {
-        this.context.info("Outside opening hours. Calculating best send time");
-        // If outside opening hours, send message at opening hour + 15 with random offset to spread out message load
-        const offset = 15 + Math.floor(Math.random() * 10);
-        // if past closing hour, add 24hours to the sendTime
-        const add24hrs = currentTime > parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
-        let sendTime = add(parse(process.env["OPENING_HOUR"], "HH:mm", currentTime), { minutes: offset });
-        if (add24hrs) {
-          sendTime = add(sendTime, { days: 1 });
-        }
-
-        this.context.info({
-          sendTime,
-        });
-
-        return twilioClient().messages.create({
-          messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
-          scheduleType: "fixed",
-          sendAt: sendTime,
-          body: messageBody,
-          to: contact.phoneNumber,
-        });
-      }
     }
+
+    this.context.info("Running scheduling checks");
+    const currentTime = new Date();
+    const startTime = parse(process.env["OPENING_HOUR"], "HH:mm", currentTime);
+    const endTime = parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
+    const isOpen = isWithinInterval(currentTime, {
+      start: startTime,
+      end: endTime,
+    });
+
+    this.context.log(
+      `Start: ${format(startTime, "yyyy-MM-dd HH:mm")} End: ${format(endTime, "yyyy-MM-dd HH:mm")} Current: ${format(
+        currentTime,
+        "yyyy-MM-dd HH:mm"
+      )} IsOpen?: ${isOpen}`
+    );
+
+    // If within opening hours, send message straight away
+    if (isOpen) {
+      this.context.info("Within opening hours. Sending message immediately.");
+      return twilioClient().messages.create({
+        messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
+        body: messageBody,
+        to: contact.phoneNumber,
+      });
+    }
+
+    this.context.info("Outside opening hours. Calculating best send time");
+    // If outside opening hours, send message at opening hour + 15 with random offset to spread out message load
+    const offset = 15 + Math.floor(Math.random() * 10);
+    // if past closing hour, add 24hours to the sendTime
+    const add24hrs = currentTime > parse(process.env["CLOSING_HOUR"], "HH:mm", currentTime);
+    let sendTime = add(parse(process.env["OPENING_HOUR"], "HH:mm", currentTime), { minutes: offset });
+    if (add24hrs) {
+      sendTime = add(sendTime, { days: 1 });
+    }
+
+    this.context.info(`Queueing message to send at: ${format(sendTime, "yyyy-MM-dd HH:mm")}`);
+
+    return twilioClient().messages.create({
+      messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
+      scheduleType: "fixed",
+      sendAt: sendTime,
+      body: messageBody,
+      to: contact.phoneNumber,
+    });
   };
 }

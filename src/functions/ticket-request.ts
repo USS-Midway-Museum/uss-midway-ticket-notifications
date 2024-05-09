@@ -14,7 +14,7 @@ export async function ticketRequest(request: HttpRequest, context: InvocationCon
 
   context.info(`Parsed inbound event. Processing ${tickets.length} ticket(s)`);
 
-  context.info(`Loading event list`);
+  context.info("Loading event list");
   // Loop through tickets and populate events record
   for (const ticket of tickets) {
     const { EventID } = ticket;
@@ -49,7 +49,7 @@ export async function ticketRequest(request: HttpRequest, context: InvocationCon
     const today = new Date();
     const todayPlus24Hours = addDays(today, 1);
 
-    context.info(`Checking send time for event`);
+    context.info("Checking send time for event");
     const startDate = new Date(StartDateTime);
 
     // If the event start time is less than 24 hours away, skip the send message step
@@ -63,18 +63,14 @@ export async function ticketRequest(request: HttpRequest, context: InvocationCon
     const filteredContacts = events[EventID].contacts.filter(
       (contact, index) => events[EventID].contacts.findIndex((obj) => contact.phoneNumber === obj.phoneNumber) === index
     );
-    context.log(filteredContacts);
     events[EventID].contacts = filteredContacts;
 
     context.info(`Identified ${filteredContacts.length} contact(s) to send to`);
     // Loop through contacts for the EventID and send messages
     for (const contact of events[EventID].contacts) {
       const message = await ticketService.sendMessage(contact, EventName, StartDateTime);
-      context.log(message);
     }
   }
-
-  context.info("Handler completed");
 
   return { body: "Done" };
 }
