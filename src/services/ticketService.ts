@@ -118,7 +118,7 @@ export class TicketService {
       );
       this.context.info(`Message contents: '${messageBody}'`);
       // Send any twilio messages to a test phone number
-      return twilioClient().messages.create({
+      return twilioClient(this.context).messages.create({
         messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
         body: messageBody,
         to: process.env["TEST_PHONE_NUMBER"],
@@ -144,7 +144,7 @@ export class TicketService {
     // If within opening hours, send message straight away
     if (isOpen) {
       this.context.info("Within opening hours. Sending message immediately.");
-      return twilioClient().messages.create({
+      return twilioClient(this.context).messages.create({
         messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
         body: messageBody,
         to: contact.phoneNumber,
@@ -163,7 +163,7 @@ export class TicketService {
 
     this.context.info(`Queueing message to send at: ${format(sendTime, "yyyy-MM-dd HH:mm")}`);
 
-    return twilioClient().messages.create({
+    return twilioClient(this.context).messages.create({
       messagingServiceSid: process.env["MESSAGING_SERVICE_SID"],
       scheduleType: "fixed",
       sendAt: sendTime,
