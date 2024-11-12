@@ -100,9 +100,8 @@ export class TicketService {
   getMessage = (contact: Contact, eventName: string, eventTime: string) => {
     const eventDate = new Date(eventTime);
     const formattedEventDate = format(eventDate, "MMM do, yyyy");
-    const formattedEventTime = format(eventDate, "HH:mm");
 
-    const messageBody = `Thank you for purchasing your ticket to visit the USS Midway.\nYour booking is for ${formattedEventDate} with entry from ${formattedEventTime}.\nIf you have any questions about the event or your visit, please reply to this message to speak with our team.`;
+    const messageBody = `Thank you for purchasing your ticket to visit the USS Midway.\nYour booking is for ${formattedEventDate} with entry between 10:00 am to 4:00 pm. The ship closes at 5:00 pm. If you have any questions about your event or your visit, please reply to this message to speak with our Guest Services Team.`;
     return messageBody;
   };
 
